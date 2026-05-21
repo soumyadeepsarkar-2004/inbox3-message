@@ -5,7 +5,8 @@ import {
   ArrowLeft, Bell, Moon, Sun, LogOut, User, Shield, Key, Trash2,
   ChevronLeft, Smile, Paperclip, Mic, Check, CheckCheck, Circle
 } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 
 interface Contact {
   id: string
@@ -52,6 +53,8 @@ const mockMessages: Record<string, Message[]> = {
 }
 
 export default function MainApp() {
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<'messages' | 'contacts' | 'settings'>('messages')
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
@@ -59,6 +62,11 @@ export default function MainApp() {
   const [searchQuery, setSearchQuery] = useState('')
   const [darkMode, setDarkMode] = useState(true)
   const [showSidebar, setShowSidebar] = useState(true)
+
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+  }
 
   const handleSelectContact = useCallback((contact: Contact) => {
     setSelectedContact(contact)
@@ -244,10 +252,10 @@ export default function MainApp() {
                     </motion.button>
                   ))}
                   <div className="pt-4 mt-4 border-t border-white/5">
-                    <Link to="/login" className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors text-left text-red-400">
+                    <button onClick={handleLogout} className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors text-left text-red-400">
                       <LogOut className="w-4 h-4" />
                       <span className="text-sm font-medium">Disconnect</span>
-                    </Link>
+                    </button>
                   </div>
                 </div>
               )}
@@ -256,12 +264,16 @@ export default function MainApp() {
             {/* User Profile */}
             <div className="p-4 border-t border-white/5">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-gradient-brand flex items-center justify-center text-xs font-semibold">
-                  ME
-                </div>
+                {user?.avatar ? (
+                  <img src={user.avatar} alt={user.name} className="w-9 h-9 rounded-full object-cover" />
+                ) : (
+                  <div className="w-9 h-9 rounded-full bg-gradient-brand flex items-center justify-center text-xs font-semibold">
+                    {(user?.name || 'ME').slice(0, 2).toUpperCase()}
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">You</p>
-                  <p className="text-xs text-white/30 font-mono truncate">0x1a2b...3c4d</p>
+                  <p className="text-sm font-medium text-white truncate">{user?.name || 'You'}</p>
+                  <p className="text-xs text-white/30 font-mono truncate">{user?.walletAddress || user?.email || '0x1a2b...3c4d'}</p>
                 </div>
                 <span className="w-2 h-2 bg-green-500 rounded-full" />
               </div>

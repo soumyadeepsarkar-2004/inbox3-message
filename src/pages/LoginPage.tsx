@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Circle, Eye, EyeOff, ArrowRight, Wallet } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Circle, Eye, EyeOff, ArrowRight, Wallet, Globe, Code } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 
 interface StepItemProps {
   number: number
@@ -25,9 +26,11 @@ interface InputGroupProps {
   placeholder: string
   type?: string
   trailing?: React.ReactNode
+  value: string
+  onChange: (v: string) => void
 }
 
-function InputGroup({ label, placeholder, type = 'text', trailing }: InputGroupProps) {
+function InputGroup({ label, placeholder, type = 'text', trailing, value, onChange }: InputGroupProps) {
   return (
     <div className="space-y-2">
       <label className="text-sm font-medium text-white">{label}</label>
@@ -35,6 +38,8 @@ function InputGroup({ label, placeholder, type = 'text', trailing }: InputGroupP
         <input
           type={type}
           placeholder={placeholder}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
           className="w-full bg-brand-gray border-none rounded-xl h-11 px-4 text-white placeholder:text-white/20 focus:ring-2 focus:ring-white/20 focus:outline-none transition-all duration-200"
         />
         {trailing && (
@@ -49,6 +54,27 @@ function InputGroup({ label, placeholder, type = 'text', trailing }: InputGroupP
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const { loginWithEmail, connectWithGoogle, connectWithGithub, loading } = useAuth()
+  const navigate = useNavigate()
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!email || !password) return
+    await loginWithEmail(email, password)
+    navigate('/app')
+  }
+
+  const handleGoogle = async () => {
+    await connectWithGoogle()
+    navigate('/profile')
+  }
+
+  const handleGithub = async () => {
+    await connectWithGithub()
+    navigate('/profile')
+  }
 
   return (
     <main className="flex min-h-screen w-full bg-black selection:bg-white/30 p-2 transition-all duration-500 lg:h-screen lg:overflow-hidden lg:p-4">
@@ -97,6 +123,26 @@ export default function LoginPage() {
             <p className="text-white/40 text-sm mt-1">Enter your credentials to access your inbox.</p>
           </div>
 
+          {/* Social Buttons */}
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              onClick={handleGoogle}
+              disabled={loading}
+              className="flex items-center justify-center gap-3 w-full h-12 bg-black border border-white/10 rounded-xl hover:bg-white/5 transition-colors duration-200 disabled:opacity-50"
+            >
+              <Globe className="w-5 h-5 text-white/80" />
+              <span className="text-sm font-medium text-white/80">Google</span>
+            </button>
+            <button
+              onClick={handleGithub}
+              disabled={loading}
+              className="flex items-center justify-center gap-3 w-full h-12 bg-black border border-white/10 rounded-xl hover:bg-white/5 transition-colors duration-200 disabled:opacity-50"
+            >
+              <Code className="w-5 h-5 text-white/80" />
+              <span className="text-sm font-medium text-white/80">GitHub</span>
+            </button>
+          </div>
+
           {/* Wallet Connect Button */}
           <Link to="/wallet" className="flex items-center justify-center gap-3 w-full h-14 bg-gradient-brand text-white font-semibold rounded-xl hover:opacity-90 active:scale-[0.98] transition-all duration-200">
             <Wallet className="w-5 h-5" />
@@ -109,14 +155,16 @@ export default function LoginPage() {
             <div className="flex-1 h-px bg-white/10" />
           </div>
 
-          <form className="space-y-4">
-            <InputGroup label="Email" placeholder="john@example.com" type="email" />
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <InputGroup label="Email" placeholder="john@example.com" type="email" value={email} onChange={setEmail} />
             <div className="space-y-2">
               <label className="text-sm font-medium text-white">Password</label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="w-full bg-brand-gray border-none rounded-xl h-11 px-4 pr-11 text-white placeholder:text-white/20 focus:ring-2 focus:ring-white/20 focus:outline-none transition-all duration-200"
                 />
                 <button
@@ -131,10 +179,17 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              className="w-full h-14 bg-white text-black font-semibold rounded-xl hover:bg-white/90 active:scale-[0.98] transition-all duration-200 mt-4 flex items-center justify-center gap-2"
+              disabled={loading || !email || !password}
+              className="w-full h-14 bg-white text-black font-semibold rounded-xl hover:bg-white/90 active:scale-[0.98] transition-all duration-200 mt-4 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Sign In
-              <ArrowRight className="w-4 h-4" />
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+              ) : (
+                <>
+                  Sign In
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </button>
           </form>
 
