@@ -10,7 +10,18 @@ export default defineConfig({
   },
   build: {
     target: 'esnext',
-    chunkSizeWarningLimit: 2000,
-    commonjsOptions: { transformMixedEsModules: true, include: [/node_modules/] }
-  }
+    chunkSizeWarningLimit: 1500,
+    commonjsOptions: { transformMixedEsModules: true, include: [/node_modules/] },
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'three-vendor': ['three', '@react-three/fiber', '@react-three/drei'],
+          'aptos-vendor': ['@aptos-labs/ts-sdk', '@aptos-labs/wallet-adapter-react'],
+          'motion-vendor': ['framer-motion'],
+          'utils-vendor': ['zustand', 'lucide-react', 'sonner', 'tweetnacl', 'tweetnacl-util'],
+        },
+      },
+    },
+  },
 })
