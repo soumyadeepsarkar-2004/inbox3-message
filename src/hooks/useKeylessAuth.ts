@@ -1,10 +1,47 @@
 import { useCallback } from 'react'
-import { Aptos, AptosConfig, Network, NetworkToNetworkName, Ed25519PrivateKey, EphemeralKeyPair } from '@aptos-labs/ts-sdk'
 import { toast } from 'sonner'
 
-const APTOS_NETWORK: Network = NetworkToNetworkName[Network.TESTNET]
-const aptosConfig = new AptosConfig({ network: APTOS_NETWORK })
-const aptos = new Aptos(aptosConfig)
+let aptosInstance: AptosClient | null = null
+
+type KeylessDeriveResult = {
+  accountAddress: { toString(): string }
+  publicKey: { toString(): string }
+}
+
+interface AptosClient {
+  deriveKeylessAccount(params: { jwt: string; ephemeralKeyPair: unknown }): Promise<KeylessDeriveResult>
+}
+
+async function getAptos(): Promise<AptosClient> {
+  if (!aptosInstance) {
+    const { Aptos, AptosConfig, Network } = await import('@aptos-labs/ts-sdk')
+
+    const envNetwork = import.meta.env.VITE_NETWORK
+
+    let network: (typeof Network)[keyof typeof Network]
+    switch (envNetwork?.trim().toLowerCase()) {
+      case 'mainnet':
+        network = Network.MAINNET
+        break
+      case 'devnet':
+        network = Network.DEVNET
+        break
+      case 'testnet':
+        network = Network.TESTNET
+        break
+      case 'local':
+        network = Network.LOCAL
+        break
+      default:
+        console.warn(`Unrecognized VITE_NETWORK "${envNetwork}", falling back to Testnet`)
+        network = Network.TESTNET
+    }
+
+    const aptosConfig = new AptosConfig({ network })
+    aptosInstance = new Aptos(aptosConfig)
+  }
+  return aptosInstance as AptosClient
+}
 
 export interface KeylessAccount {
   address: string
@@ -43,6 +80,8 @@ export function useKeylessAuth() {
     try {
       toast.loading('Redirecting to Google sign-in...')
       
+      const aptos = await getAptos()
+      const { Ed25519PrivateKey, EphemeralKeyPair } = await import('@aptos-labs/ts-sdk')
       const jwt = await getGoogleJwt()
       const privateKey = Ed25519PrivateKey.generate()
       const ephemeralKeyPair = new EphemeralKeyPair({ privateKey })
@@ -76,6 +115,8 @@ export function useKeylessAuth() {
     try {
       toast.loading('Redirecting to Apple sign-in...')
       
+      const aptos = await getAptos()
+      const { Ed25519PrivateKey, EphemeralKeyPair } = await import('@aptos-labs/ts-sdk')
       const jwt = await getAppleJwt()
       const privateKey = Ed25519PrivateKey.generate()
       const ephemeralKeyPair = new EphemeralKeyPair({ privateKey })
@@ -144,9 +185,10 @@ export function useKeylessAuth() {
         throw new Error('Passkey creation cancelled')
       }
 
+      const rawHex = Array.from(new Uint8Array(credential.rawId)).map(b => b.toString(16).padStart(2, '0')).join('')
       const account: KeylessAccount = {
-        address: `0x${Buffer.from(credential.rawId).toString('hex').slice(0, 64)}`,
-        publicKey: Buffer.from(credential.rawId).toString('hex'),
+        address: `0x${rawHex.slice(0, 64)}`,
+        publicKey: rawHex,
         jwt: '',
         expiresAt: Date.now() + 86400000 * 30,
       }

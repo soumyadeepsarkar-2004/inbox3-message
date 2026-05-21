@@ -96,7 +96,7 @@ export function Inbox3WalletProvider({ children }: { children: ReactNode }) {
   return (
     <AptosWalletAdapterProvider
       autoConnect={false}
-      dappConfig={{ network: 'Testnet' as never }}
+      dappConfig={{ network: 'testnet' as never }}
       onError={(error) => {
         console.error('Wallet adapter error:', error)
       }}

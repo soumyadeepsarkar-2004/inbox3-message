@@ -1,9 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import {
-  MessageSquare, Users, Settings, Bell, Moon, Sun, LogOut, User, Shield, Key, Trash2,
-  ChevronLeft, Plus, Circle
-} from 'lucide-react'
+import { MessageSquare, Users, Settings, Bell, Moon, Sun, LogOut, User, Shield, Key, Trash2, ChevronLeft, Plus, Circle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useWallet } from '../context/WalletProvider'
@@ -16,39 +12,15 @@ import ChatHeader from '../components/chat/ChatHeader'
 import ContactList from '../components/chat/ContactList'
 import { SearchBar, FilterBar } from '../components/chat/SearchBar'
 import { TxStatusIndicator, type TxStatus } from '../components/chat/TxStatusIndicator'
+import ComposeMessageModal from '../components/chat/ComposeMessageModal'
+import { useContactManager, type Contact } from '../hooks/useContactManager'
+import { EncryptionManager } from '../lib/crypto'
 
-interface Contact {
-  id: string
-  address: string
-  name: string
-  avatar: string
-  lastMessage: string
-  timestamp: string
-  unread: number
-  online: boolean
-}
+const encryptionManager = new EncryptionManager()
 
-const mockContacts: Contact[] = [
-  { id: '1', address: '0x1a2b...3c4d', name: 'Alice Chen', avatar: 'AC', lastMessage: 'Hey! Did you see the new update?', timestamp: '2m', unread: 2, online: true },
-  { id: '2', address: '0x5e6f...7g8h', name: 'Bob Smith', avatar: 'BS', lastMessage: 'The transaction went through', timestamp: '15m', unread: 0, online: true },
-  { id: '3', address: '0x9i0j...1k2l', name: 'Carol Davis', avatar: 'CD', lastMessage: 'Let me check and get back to you', timestamp: '1h', unread: 0, online: false },
-  { id: '4', address: '0x3m4n...5o6p', name: 'David Kim', avatar: 'DK', lastMessage: 'Great, see you tomorrow!', timestamp: '3h', unread: 1, online: false },
-  { id: '5', address: '0x7q8r...9s0t', name: 'Eve Wilson', avatar: 'EW', lastMessage: 'Thanks for the info', timestamp: '1d', unread: 0, online: true },
-  { id: '6', address: '0x1u2v...3w4x', name: 'Frank Lee', avatar: 'FL', lastMessage: 'Can you review the contract?', timestamp: '2d', unread: 0, online: false },
-]
-
-const mockMessages: Record<string, Message[]> = {
-  '1': [
-    { id: '1', sender: 'Alice Chen', senderAddress: '0x1a2b', content: 'Hey! How are you?', timestamp: '10:30 AM', direction: 'received', status: 'confirmed' },
-    { id: '2', sender: 'You', senderAddress: '0xme', content: 'Doing great! Just checking out Inbox3', timestamp: '10:32 AM', direction: 'sent', status: 'confirmed' },
-    { id: '3', sender: 'Alice Chen', senderAddress: '0x1a2b', content: 'It\'s amazing right? The encryption is top-notch', timestamp: '10:33 AM', direction: 'received', status: 'confirmed' },
-    { id: '4', sender: 'You', senderAddress: '0xme', content: 'Yeah, finally a messaging app that respects privacy', timestamp: '10:35 AM', direction: 'sent', status: 'confirmed' },
-    { id: '5', sender: 'Alice Chen', senderAddress: '0x1a2b', content: 'Hey! Did you see the new update?', timestamp: '10:40 AM', direction: 'received', status: 'confirmed' },
-  ],
-  '2': [
-    { id: '1', sender: 'Bob Smith', senderAddress: '0x5e6f', content: 'Did you send the tokens?', timestamp: '9:00 AM', direction: 'received', status: 'confirmed' },
-    { id: '2', sender: 'You', senderAddress: '0xme', content: 'Yes, just sent them via the smart contract', timestamp: '9:15 AM', direction: 'sent', status: 'confirmed' },
-    { id: '3', sender: 'Bob Smith', senderAddress: '0x5e6f', content: 'The transaction went through', timestamp: '9:20 AM', direction: 'received', status: 'confirmed' },
+const initialMessages: Record<string, Message[]> = {
+  'welcome': [
+    { id: 'w1', sender: 'Inbox3 Bot', senderAddress: '0x0000', content: 'Welcome to Inbox3! All messages are end-to-end encrypted.', timestamp: 'Just now', direction: 'received', status: 'confirmed' },
   ],
 }
 
@@ -56,6 +28,7 @@ export default function MainApp() {
   const { user, logout } = useAuth()
   const { signAndSubmit } = useWallet()
   const navigate = useNavigate()
+  const { contacts, addContact, searchContacts, markRead, updateContact } = useContactManager()
   const [activeTab, setActiveTab] = useState<'messages' | 'contacts' | 'settings'>('messages')
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
@@ -63,9 +36,16 @@ export default function MainApp() {
   const [darkMode, setDarkMode] = useState(true)
   const [showSidebar, setShowSidebar] = useState(true)
   const [txStatus, setTxStatus] = useState<TxStatus>('idle')
+  const [showCompose, setShowCompose] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const { performanceMode, togglePerformanceMode } = useAppStore()
+
+  useEffect(() => {
+    if (!encryptionManager.loadKeys()) {
+      encryptionManager.generateKeys()
+    }
+  }, [])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -73,9 +53,18 @@ export default function MainApp() {
 
   const handleSelectContact = useCallback((contact: Contact) => {
     setSelectedContact(contact)
-    setMessages(mockMessages[contact.id] || [])
-    setShowSidebar(false)
+    const stored = localStorage.getItem(`inbox3_messages_${contact.id}`)
+    setMessages(stored ? JSON.parse(stored) : initialMessages[contact.id] || [])
     setTxStatus('idle')
+    markRead(contact.id)
+  }, [markRead])
+
+  const persistMessages = useCallback((contactId: string, msgs: Message[]) => {
+    try {
+      localStorage.setItem(`inbox3_messages_${contactId}`, JSON.stringify(msgs))
+    } catch {
+      // Storage not available
+    }
   }, [])
 
   const handleSend = useCallback(async (content: string, type: 'text' | 'image' | 'voice') => {
@@ -83,222 +72,263 @@ export default function MainApp() {
 
     setTxStatus('signing')
     const tempId = Date.now().toString()
+    const recipientKey = encryptionManager.getPublicKey()
+    let encryptedContent = content
+
+    if (type === 'text' && recipientKey) {
+      try {
+        encryptedContent = encryptionManager.encrypt(content, selectedContact.address)
+      } catch {
+        encryptedContent = content
+      }
+    }
+
     const tempMsg: Message = {
       id: tempId,
       sender: 'You',
       senderAddress: user?.walletAddress || '0xme',
-      content,
+      content: encryptedContent,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       direction: 'sent',
       status: 'mempool',
       type,
     }
-    setMessages(prev => [...prev, tempMsg])
+
+    const updated = [...messages, tempMsg]
+    setMessages(updated)
+    persistMessages(selectedContact.id, updated)
 
     const toastId = toast.loading('Signing transaction...')
 
     try {
       setTxStatus('submitting')
       toast.loading('Submitting to Aptos testnet...', { id: toastId })
-      const hash = await signAndSubmit({ content, recipient: selectedContact.address })
+      const hash = await signAndSubmit({ content: encryptedContent, recipient: selectedContact.address })
 
       if (hash) {
-        setMessages(prev => prev.map(m =>
-          m.id === tempId ? { ...m, status: 'confirmed' } : m
-        ))
+        const confirmed = messages.map(m =>
+          m.id === tempId ? { ...m, status: 'confirmed' as const } : m
+        )
+        setMessages(confirmed)
+        persistMessages(selectedContact.id, confirmed)
         setTxStatus('confirmed')
         toast.success('Message sent on-chain', {
           id: toastId,
           description: `Tx: ${hash.slice(0, 10)}...${hash.slice(-6)}`,
         })
       } else {
-        setMessages(prev => prev.map(m =>
-          m.id === tempId ? { ...m, status: 'failed' } : m
-        ))
+        const failed = messages.map(m =>
+          m.id === tempId ? { ...m, status: 'failed' as const } : m
+        )
+        setMessages(failed)
+        persistMessages(selectedContact.id, failed)
         setTxStatus('failed')
         toast.error('Transaction failed', { id: toastId })
       }
     } catch (err) {
-      setMessages(prev => prev.map(m =>
-        m.id === tempId ? { ...m, status: 'failed' } : m
-      ))
+      const failed = messages.map(m =>
+        m.id === tempId ? { ...m, status: 'failed' as const } : m
+      )
+      setMessages(failed)
+      persistMessages(selectedContact.id, failed)
       setTxStatus('failed')
       const message = err instanceof Error ? err.message : 'Transaction rejected'
       toast.error('Transaction failed', { id: toastId, description: message })
     }
 
     setTimeout(() => setTxStatus('idle'), 3000)
-  }, [selectedContact, user, signAndSubmit])
+  }, [selectedContact, messages, user, signAndSubmit, persistMessages])
+
+  const handleComposeSend = useCallback((address: string, name: string, message: string) => {
+    const contact = addContact(address, name)
+    if (!contact) return
+
+    const msg: Message = {
+      id: Date.now().toString(),
+      sender: 'You',
+      senderAddress: user?.walletAddress || '0xme',
+      content: message,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      direction: 'sent',
+      status: 'confirmed',
+    }
+
+    updateContact(contact.id, { lastMessage: message, timestamp: 'Just now' })
+
+    const existing = JSON.parse(localStorage.getItem(`inbox3_messages_${contact.id}`) || '[]')
+    existing.push(msg)
+    persistMessages(contact.id, existing)
+
+    setSelectedContact(contact)
+    setMessages(existing)
+    setActiveTab('messages')
+    setShowSidebar(false)
+
+    toast.success(`Message sent to ${name || address.slice(0, 8)}`)
+  }, [addContact, user, updateContact, persistMessages])
 
   const handleReact = useCallback((messageId: string, emoji: string) => {
-    setMessages(prev => prev.map(m => {
-      if (m.id !== messageId) return m
-      const reactions = m.reactions || []
-      const existing = reactions.find(r => r.emoji === emoji)
-      if (existing) {
-        return { ...m, reactions: reactions.map(r => r.emoji === emoji ? { ...r, count: r.count + 1 } : r) }
-      }
-      return { ...m, reactions: [...reactions, { emoji, count: 1, users: ['you'] }] }
-    }))
-  }, [])
+    setMessages(prev => {
+      const next = prev.map(m => {
+        if (m.id !== messageId) return m
+        const reactions = m.reactions || []
+        const existing = reactions.find(r => r.emoji === emoji)
+        if (existing) {
+          return { ...m, reactions: reactions.map(r => r.emoji === emoji ? { ...r, count: r.count + 1 } : r) }
+        }
+        return { ...m, reactions: [...reactions, { emoji, count: 1, users: ['you'] }] }
+      })
+      if (selectedContact) persistMessages(selectedContact.id, next)
+      return next
+    })
+  }, [selectedContact, persistMessages])
 
   const handleLogout = () => {
     logout()
     navigate('/login')
   }
 
-  const filteredContacts = mockContacts.filter(c =>
-    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.address.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const filteredContacts = searchContacts(searchQuery)
 
   return (
     <div className="flex h-screen w-full bg-black/80 backdrop-blur-xl text-white overflow-hidden">
       <BackgroundCanvas />
+      <ComposeMessageModal open={showCompose} onClose={() => setShowCompose(false)} onSend={handleComposeSend} />
 
-      {/* Sidebar */}
-      <AnimatePresence>
-        {(showSidebar || window.innerWidth >= 1024) && (
-          <motion.aside
-            initial={{ x: -300, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -300, opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className={`${selectedContact && window.innerWidth < 1024 ? 'hidden' : 'flex'} flex-col w-full lg:w-96 lg:min-w-96 border-r border-white/5 bg-black/50 backdrop-blur-xl relative z-10`}
-          >
-            {/* Header */}
-            <div className="p-4 border-b border-white/5">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Circle className="fill-white text-white w-5 h-5" />
-                  <span className="text-lg font-semibold tracking-tight">Inbox3</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-lg hover:bg-white/5 transition-colors">
-                    {darkMode ? <Sun className="w-4 h-4 text-white/60" /> : <Moon className="w-4 h-4 text-white/60" />}
-                  </button>
-                  <button className="p-2 rounded-lg hover:bg-white/5 transition-colors relative">
-                    <Bell className="w-4 h-4 text-white/60" />
-                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-gradient-to-r from-[#A855F7] to-[#FF6B35] rounded-full" />
-                  </button>
-                </div>
-              </div>
-
-              <SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="Search messages..." />
+      <aside className={`${showSidebar || window.innerWidth >= 1024 ? 'flex' : 'hidden'} flex-col w-full lg:w-96 lg:min-w-96 border-r border-white/5 bg-black/50 backdrop-blur-xl relative z-10`}>
+        <div className="p-4 border-b border-white/5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Circle className="fill-white text-white w-5 h-5" />
+              <span className="text-lg font-semibold tracking-tight">Inbox3</span>
             </div>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-lg hover:bg-white/5 transition-colors">
+                {darkMode ? <Sun className="w-4 h-4 text-white/60" /> : <Moon className="w-4 h-4 text-white/60" />}
+              </button>
+              <button className="p-2 rounded-lg hover:bg-white/5 transition-colors relative">
+                <Bell className="w-4 h-4 text-white/60" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-gradient-to-r from-[#A855F7] to-[#FF6B35] rounded-full" />
+              </button>
+            </div>
+          </div>
 
-            {/* Tabs */}
-            <div className="flex border-b border-white/5">
-              {[
-                { id: 'messages' as const, icon: MessageSquare, label: 'Messages' },
-                { id: 'contacts' as const, icon: Users, label: 'Contacts' },
-                { id: 'settings' as const, icon: Settings, label: 'Settings' },
-              ].map(tab => (
+          <SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="Search messages..." />
+        </div>
+
+        <div className="flex border-b border-white/5">
+          {[
+            { id: 'messages' as const, icon: MessageSquare, label: 'Messages' },
+            { id: 'contacts' as const, icon: Users, label: 'Contacts' },
+            { id: 'settings' as const, icon: Settings, label: 'Settings' },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 text-xs font-medium transition-colors ${
+                activeTab === tab.id
+                  ? 'text-white border-b-2 border-white'
+                  : 'text-white/40 hover:text-white/60'
+              }`}
+            >
+              <tab.icon className="w-3.5 h-3.5" />
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <FilterBar onFilter={() => {}} />
+
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {activeTab === 'messages' && (
+            <ContactList contacts={filteredContacts} onSelect={handleSelectContact} />
+          )}
+
+          {activeTab === 'contacts' && (
+            <div className="p-4 space-y-2 overflow-y-auto flex-1">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm text-white/40">Your decentralized contacts</p>
                 <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 text-xs font-medium transition-colors ${
-                    activeTab === tab.id
-                      ? 'text-white border-b-2 border-white'
-                      : 'text-white/40 hover:text-white/60'
-                  }`}
+                  onClick={() => setShowCompose(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#A855F7] to-[#FF6B35] text-white text-xs font-medium hover:opacity-90 transition-all"
                 >
-                  <tab.icon className="w-3.5 h-3.5" />
-                  {tab.label}
+                  <Plus className="w-3 h-3" />
+                  Add Contact
+                </button>
+              </div>
+              {contacts.map((contact) => (
+                <button
+                  key={contact.id}
+                  onClick={() => handleSelectContact(contact)}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors text-left"
+                >
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#A855F7] to-[#FF6B35] flex items-center justify-center text-sm font-medium">
+                    {contact.avatar}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white truncate">{contact.name}</p>
+                    <p className="text-xs text-white/30 font-mono truncate">{contact.address}</p>
+                  </div>
+                  <span className="w-2 h-2 bg-white/20 rounded-full" />
                 </button>
               ))}
-            </div>
-
-            <FilterBar onFilter={() => {}} />
-
-            {/* Content */}
-            <div className="flex-1 flex flex-col overflow-hidden">
-              {activeTab === 'messages' && (
-                <ContactList contacts={filteredContacts} onSelect={handleSelectContact} />
-              )}
-
-              {activeTab === 'contacts' && (
-                <div className="p-4 space-y-2 overflow-y-auto flex-1">
-                  <p className="text-sm text-white/40 mb-4">Your decentralized contacts</p>
-                  {mockContacts.map((contact, i) => (
-                    <motion.div
-                      key={contact.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.05 }}
-                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors"
-                    >
-                      <div className="w-10 h-10 rounded-full bg-[#1A1A1A] flex items-center justify-center text-sm font-medium">
-                        {contact.avatar}
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-white">{contact.name}</p>
-                        <p className="text-xs text-white/30 font-mono">{contact.address}</p>
-                      </div>
-                      {contact.online && <span className="w-2 h-2 bg-green-500 rounded-full" />}
-                    </motion.div>
-                  ))}
-                </div>
-              )}
-
-              {activeTab === 'settings' && (
-                <div className="p-4 space-y-1 overflow-y-auto flex-1">
-                  {[
-                    { icon: User, label: 'Profile', desc: 'Edit your identity' },
-                    { icon: Bell, label: 'Notifications', desc: 'Manage alerts' },
-                    { icon: Shield, label: 'Privacy', desc: 'Encryption & security' },
-                    { icon: Key, label: 'Keys', desc: 'Manage encryption keys' },
-                    { icon: performanceMode ? Sun : Moon, label: performanceMode ? 'Performance Mode' : 'Standard Mode', desc: performanceMode ? '3D effects disabled' : 'Full animations enabled', action: togglePerformanceMode },
-                    { icon: Trash2, label: 'Clear Data', desc: 'Remove local data' },
-                  ].map((item, i) => (
-                    <motion.button
-                      key={item.label}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.05 }}
-                      onClick={item.action}
-                      className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors text-left"
-                    >
-                      <item.icon className="w-4 h-4 text-white/40" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-white">{item.label}</p>
-                        <p className="text-xs text-white/30">{item.desc}</p>
-                      </div>
-                      <ChevronLeft className="w-4 h-4 text-white/20 rotate-180" />
-                    </motion.button>
-                  ))}
-                  <div className="pt-4 mt-4 border-t border-white/5">
-                    <button onClick={handleLogout} className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors text-left text-red-400">
-                      <LogOut className="w-4 h-4" />
-                      <span className="text-sm font-medium">Disconnect</span>
-                    </button>
-                  </div>
-                </div>
+              {contacts.length === 0 && (
+                <p className="text-center text-sm text-white/20 py-8">No contacts yet. Compose a new message to add one.</p>
               )}
             </div>
+          )}
 
-            {/* User Profile */}
-            <div className="p-4 border-t border-white/5">
-              <div className="flex items-center gap-3">
-                {user?.avatar ? (
-                  <img src={user.avatar} alt={user.name} className="w-9 h-9 rounded-full object-cover" />
-                ) : (
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#A855F7] to-[#FF6B35] flex items-center justify-center text-xs font-semibold">
-                    {(user?.name || 'ME').slice(0, 2).toUpperCase()}
+          {activeTab === 'settings' && (
+            <div className="p-4 space-y-1 overflow-y-auto flex-1">
+              {[
+                { icon: User, label: 'Profile', desc: 'Edit your identity' },
+                { icon: Bell, label: 'Notifications', desc: 'Manage alerts' },
+                { icon: Shield, label: 'Privacy', desc: 'Encryption & security' },
+                { icon: Key, label: 'Keys', desc: 'Manage encryption keys' },
+                { icon: performanceMode ? Sun : Moon, label: performanceMode ? 'Performance Mode' : 'Standard Mode', desc: performanceMode ? '3D effects disabled' : 'Full animations enabled', action: togglePerformanceMode },
+                { icon: Trash2, label: 'Clear Data', desc: 'Remove local data' },
+              ].map((item) => (
+                <button
+                  key={item.label}
+                  onClick={item.action}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors text-left"
+                >
+                  <item.icon className="w-4 h-4 text-white/40" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-white">{item.label}</p>
+                    <p className="text-xs text-white/30">{item.desc}</p>
                   </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">{user?.name || 'You'}</p>
-                  <p className="text-xs text-white/30 font-mono truncate">{user?.walletAddress || user?.email || '0x1a2b...3c4d'}</p>
-                </div>
-                <span className="w-2 h-2 bg-green-500 rounded-full" />
+                  <ChevronLeft className="w-4 h-4 text-white/20 rotate-180" />
+                </button>
+              ))}
+              <div className="pt-4 mt-4 border-t border-white/5">
+                <button onClick={handleLogout} className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors text-left text-red-400">
+                  <LogOut className="w-4 h-4" />
+                  <span className="text-sm font-medium">Disconnect</span>
+                </button>
               </div>
             </div>
-          </motion.aside>
-        )}
-      </AnimatePresence>
+          )}
+        </div>
 
-      {/* Main Chat Area */}
+        <div className="p-4 border-t border-white/5">
+          <div className="flex items-center gap-3">
+            {user?.avatar ? (
+              <img src={user.avatar} alt={user.name} className="w-9 h-9 rounded-full object-cover" />
+            ) : (
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#A855F7] to-[#FF6B35] flex items-center justify-center text-xs font-semibold">
+                {(user?.name || 'ME').slice(0, 2).toUpperCase()}
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-white truncate">{user?.name || 'You'}</p>
+              <p className="text-xs text-white/30 font-mono truncate">{user?.walletAddress || user?.email || '0x1a2b...3c4d'}</p>
+            </div>
+            <span className="w-2 h-2 bg-green-500 rounded-full" />
+          </div>
+        </div>
+      </aside>
+
       <div className="flex-1 flex flex-col relative z-10 bg-black/30">
         {selectedContact ? (
           <>
@@ -321,11 +351,7 @@ export default function MainApp() {
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="text-center max-w-sm"
-            >
+            <div className="text-center max-w-sm">
               <div className="w-20 h-20 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-[#A855F7]/10 to-[#FF6B35]/10 flex items-center justify-center">
                 <MessageSquare className="w-10 h-10 text-white/20" />
               </div>
@@ -335,11 +361,14 @@ export default function MainApp() {
               <p className="text-white/40 text-sm leading-relaxed mb-6">
                 Select a conversation from the sidebar or start a new one to begin your encrypted journey.
               </p>
-              <button className="inline-flex items-center gap-2 bg-gradient-to-r from-[#A855F7] to-[#FF6B35] text-white text-sm font-medium px-6 py-2.5 rounded-full hover:opacity-90 transition-all active:scale-95">
+              <button
+                onClick={() => setShowCompose(true)}
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-[#A855F7] to-[#FF6B35] text-white text-sm font-medium px-6 py-2.5 rounded-full hover:opacity-90 transition-all active:scale-95"
+              >
                 <Plus className="w-4 h-4" />
                 New Message
               </button>
-            </motion.div>
+            </div>
           </div>
         )}
       </div>
