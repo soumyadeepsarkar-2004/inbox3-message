@@ -1,44 +1,64 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Circle, ArrowRight, Wallet, Shield, Smartphone, Globe } from 'lucide-react'
+import { Circle, ArrowRight, Wallet, ExternalLink } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useWallet } from '../context/WalletProvider'
+import { toast } from 'sonner'
+import {
+  aptosStandardSupportedWalletList,
+} from '@aptos-labs/wallet-adapter-react'
 
-function generateMockAddress(): string {
-  const part1 = Math.random().toString(16).slice(2, 10)
-  const part2 = Math.random().toString(16).slice(2, 6)
-  return `0x${part1}...${part2}`
+const walletDescriptions: Record<string, string> = {
+  'Petra': 'Most popular Aptos wallet',
+  'Martian': 'Secure & feature-rich',
+  'Pontem': 'Multi-chain support',
+  'Rise': 'Next-gen wallet',
+  'Fewcha': 'Mobile-first design',
+  'OKX Wallet': 'Exchange integrated',
 }
 
-const wallets = [
-  { id: 'petra', name: 'Petra', icon: Wallet, description: 'Most popular Aptos wallet' },
-  { id: 'martian', name: 'Martian', icon: Shield, description: 'Secure & feature-rich' },
-  { id: 'pontem', name: 'Pontem', icon: Globe, description: 'Multi-chain support' },
-  { id: 'fewcha', name: 'Fewcha', icon: Smartphone, description: 'Mobile-first design' },
-  { id: 'rise', name: 'Rise', icon: Wallet, description: 'Next-gen wallet' },
-  { id: 'okx', name: 'OKX', icon: Globe, description: 'Exchange integrated' },
-]
-
 export default function WalletConnectPage() {
-  const [selectedWallet, setSelectedWallet] = useState<string | null>(null)
-  const [connecting, setConnecting] = useState(false)
-  const { connectWallet, loading } = useAuth()
+  const [connecting, setConnecting] = useState<string | null>(null)
+  const { connectWallet, loading: authLoading } = useAuth()
+  const { connect, connected, address } = useWallet()
   const navigate = useNavigate()
 
-  const handleConnect = async (id: string) => {
-    setSelectedWallet(id)
-    setConnecting(true)
-    await new Promise(r => setTimeout(r, 2000))
-    const mockAddress = generateMockAddress()
-    await connectWallet(id.charAt(0).toUpperCase() + id.slice(1), mockAddress)
-    setConnecting(false)
-    navigate('/profile')
+  const allWallets = aptosStandardSupportedWalletList.filter(
+    (w) => !['Aptos Connect', 'Google', 'Apple'].includes(w.name)
+  ) as Array<{ name: string; readyState: string; url?: string; icon?: string }>
+
+  useEffect(() => {
+    if (connected && address) {
+      toast.success('Wallet connected', { description: `${address.slice(0, 8)}...${address.slice(-6)}` })
+    }
+  }, [connected, address])
+
+  const handleConnect = async (name: string) => {
+    setConnecting(name)
+    try {
+      await connect()
+      await connectWallet(name, address || '')
+      toast.success('Connected successfully')
+      navigate('/profile')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Connection failed'
+      toast.error('Connection failed', { description: message })
+    } finally {
+      setConnecting(null)
+    }
+  }
+
+  const handleInstall = (walletName: string) => {
+    const wallet = allWallets.find((w) => w.name === walletName)
+    if (wallet?.url) {
+      window.open(wallet.url, '_blank', 'noopener,noreferrer')
+    }
   }
 
   return (
     <main className="min-h-screen bg-black text-white selection:bg-white/30 p-4 lg:p-8">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -54,9 +74,7 @@ export default function WalletConnectPage() {
           </div>
         </motion.div>
 
-        {/* Main Content */}
         <div className="grid lg:grid-cols-2 gap-12 items-start">
-          {/* Left - Info */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
@@ -95,7 +113,6 @@ export default function WalletConnectPage() {
             </div>
           </motion.div>
 
-          {/* Right - Wallet Grid */}
           <motion.div
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
@@ -113,7 +130,7 @@ export default function WalletConnectPage() {
                 >
                   <div className="w-16 h-16 mx-auto border-4 border-white/10 border-t-white rounded-full animate-spin" />
                   <div>
-                    <p className="text-lg font-medium text-white">Connecting to {selectedWallet}</p>
+                    <p className="text-lg font-medium text-white">Connecting to {connecting}</p>
                     <p className="text-sm text-white/50 mt-2">Approve the connection in your wallet extension</p>
                   </div>
                 </motion.div>
@@ -125,25 +142,39 @@ export default function WalletConnectPage() {
                   exit={{ opacity: 0 }}
                   className="grid grid-cols-2 gap-3"
                 >
-                  {wallets.map((wallet, i) => (
-                    <motion.button
-                      key={wallet.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.08 }}
-                      onClick={() => handleConnect(wallet.id)}
-                      disabled={loading}
-                      className="group flex flex-col items-center gap-3 p-6 bg-brand-gray rounded-2xl hover:bg-white/10 transition-all duration-200 active:scale-[0.98] disabled:opacity-50"
-                    >
-                      <div className="w-12 h-12 rounded-xl bg-gradient-brand flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
-                        <wallet.icon className="w-6 h-6 text-white" />
-                      </div>
-                      <div className="text-center">
-                        <p className="font-medium text-white text-sm">{wallet.name}</p>
-                        <p className="text-xs text-white/40 mt-1">{wallet.description}</p>
-                      </div>
-                    </motion.button>
-                  ))}
+                  {allWallets.map((wallet, i) => {
+                    const installed = String(wallet.readyState) === 'Installed'
+                    const Icon = Wallet
+                    const description = walletDescriptions[wallet.name] || 'Aptos wallet'
+
+                    return (
+                      <motion.button
+                        key={wallet.name}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.08 }}
+                        onClick={() => installed ? handleConnect(wallet.name) : handleInstall(wallet.name)}
+                        disabled={authLoading}
+                        className="group relative flex flex-col items-center gap-3 p-6 bg-brand-gray rounded-2xl hover:bg-white/10 transition-all duration-200 active:scale-[0.98] disabled:opacity-50"
+                      >
+                        {!installed && (
+                          <div className="absolute top-2 right-2">
+                            <ExternalLink className="w-3 h-3 text-white/40" />
+                          </div>
+                        )}
+                        <div className="w-12 h-12 rounded-xl bg-gradient-brand flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                          <Icon className="w-6 h-6 text-white" />
+                        </div>
+                        <div className="text-center">
+                          <p className="font-medium text-white text-sm">{wallet.name}</p>
+                          <p className="text-xs text-white/40 mt-1">{description}</p>
+                          <p className="text-[10px] mt-1 text-white/30">
+                            {installed ? 'Click to connect' : 'Install required'}
+                          </p>
+                        </div>
+                      </motion.button>
+                    )
+                  })}
                 </motion.div>
               )}
             </AnimatePresence>

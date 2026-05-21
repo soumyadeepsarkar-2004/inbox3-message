@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Circle, Eye, EyeOff, ArrowRight, Wallet, Globe, Code } from 'lucide-react'
+import { Circle, Eye, EyeOff, ArrowRight, Wallet, Globe, Code, KeyRound } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
@@ -147,6 +147,12 @@ export default function LoginPage() {
           <Link to="/wallet" className="flex items-center justify-center gap-3 w-full h-14 bg-gradient-brand text-white font-semibold rounded-xl hover:opacity-90 active:scale-[0.98] transition-all duration-200">
             <Wallet className="w-5 h-5" />
             Connect Wallet
+          </Link>
+
+          {/* Keyless Auth Button */}
+          <Link to="/keyless" className="flex items-center justify-center gap-3 w-full h-14 bg-brand-gray border border-white/10 text-white font-semibold rounded-xl hover:bg-white/10 active:scale-[0.98] transition-all duration-200">
+            <KeyRound className="w-5 h-5" />
+            Sign in with Keyless / Passkey
           </Link>
 
           <div className="relative flex items-center">

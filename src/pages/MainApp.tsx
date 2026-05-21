@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useWallet } from '../context/WalletProvider'
 import { useAppStore } from '../store/useAppStore'
+import { toast } from 'sonner'
 import BackgroundCanvas from '../components/canvas/BackgroundCanvas'
 import MessageCard, { type Message } from '../components/chat/MessageCard'
 import ChatInput from '../components/chat/ChatInput'
@@ -94,13 +95,37 @@ export default function MainApp() {
     }
     setMessages(prev => [...prev, tempMsg])
 
-    setTxStatus('submitting')
-    const hash = await signAndSubmit({ content, recipient: selectedContact.address })
+    const toastId = toast.loading('Signing transaction...')
 
-    setMessages(prev => prev.map(m =>
-      m.id === tempId ? { ...m, status: hash ? 'confirmed' : 'failed' } : m
-    ))
-    setTxStatus(hash ? 'confirmed' : 'failed')
+    try {
+      setTxStatus('submitting')
+      toast.loading('Submitting to Aptos testnet...', { id: toastId })
+      const hash = await signAndSubmit({ content, recipient: selectedContact.address })
+
+      if (hash) {
+        setMessages(prev => prev.map(m =>
+          m.id === tempId ? { ...m, status: 'confirmed' } : m
+        ))
+        setTxStatus('confirmed')
+        toast.success('Message sent on-chain', {
+          id: toastId,
+          description: `Tx: ${hash.slice(0, 10)}...${hash.slice(-6)}`,
+        })
+      } else {
+        setMessages(prev => prev.map(m =>
+          m.id === tempId ? { ...m, status: 'failed' } : m
+        ))
+        setTxStatus('failed')
+        toast.error('Transaction failed', { id: toastId })
+      }
+    } catch (err) {
+      setMessages(prev => prev.map(m =>
+        m.id === tempId ? { ...m, status: 'failed' } : m
+      ))
+      setTxStatus('failed')
+      const message = err instanceof Error ? err.message : 'Transaction rejected'
+      toast.error('Transaction failed', { id: toastId, description: message })
+    }
 
     setTimeout(() => setTxStatus('idle'), 3000)
   }, [selectedContact, user, signAndSubmit])
