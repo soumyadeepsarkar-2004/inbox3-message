@@ -9,8 +9,6 @@ import WalletConnectPage from './pages/WalletConnectPage'
 import KeylessAuthPage from './pages/KeylessAuthPage'
 import ProfilePage from './pages/ProfilePage'
 import MainApp from './pages/MainApp'
-import BackgroundCanvas from './components/canvas/BackgroundCanvas'
-
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
   return user ? <>{children}</> : <Navigate to="/login" replace />
@@ -21,7 +19,6 @@ function AppRoutes() {
 
   return (
     <>
-      <BackgroundCanvas />
       <div className="relative z-10">
         <Routes>
           <Route path="/" element={<LandingPage />} />
