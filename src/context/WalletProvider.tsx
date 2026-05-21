@@ -93,11 +93,36 @@ function WalletAdapterBridge({ children }: { children: ReactNode }) {
   )
 }
 
+const getAppNetwork = (): Network => {
+  const envNetwork = import.meta.env.VITE_APTOS_NETWORK
+
+  if (!envNetwork) {
+    return Network.TESTNET
+  }
+
+  const normalized = envNetwork.trim().toLowerCase()
+
+  switch (normalized) {
+    case 'mainnet':
+      return Network.MAINNET
+    case 'testnet':
+      return Network.TESTNET
+    case 'devnet':
+      return Network.DEVNET
+    case 'local':
+    case 'localhost':
+      return Network.LOCAL
+    default:
+      console.warn(`Unrecognized network '${envNetwork}', defaulting to Testnet.`)
+      return Network.TESTNET
+  }
+}
+
 export function Inbox3WalletProvider({ children }: { children: ReactNode }) {
   return (
     <AptosWalletAdapterProvider
       autoConnect={false}
-      dappConfig={{ network: Network.TESTNET }}
+      dappConfig={{ network: getAppNetwork() }}
       onError={(error) => {
         console.error('Wallet adapter error:', error)
       }}
