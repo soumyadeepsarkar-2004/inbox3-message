@@ -1,0 +1,56 @@
+name: Inbox3 CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+
+  test-move:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aptos-labs/setup-aptos-cli@v1
+      - run: cd contracts/inbox3 && aptos move test
+
+  deploy-testnet:
+    needs: [test-frontend, test-move]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aptos-labs/setup-aptos-cli@v1
+      - run: |
+          cd contracts/inbox3
+          aptos move compile --named-addresses inbox3_addr=default
+          aptos move publish --named-addresses inbox3_addr=default --private-key ${{ secrets.APTOS_PRIVATE_KEY }}
+
+  deploy-vercel:
+    needs: [test-frontend]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - run: npm run build
+      - uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: ./

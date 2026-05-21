@@ -1,12 +1,20 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  MessageSquare, Users, Settings, Search, Send, Phone, Video, MoreVertical,
-  ArrowLeft, Bell, Moon, Sun, LogOut, User, Shield, Key, Trash2,
-  ChevronLeft, Smile, Paperclip, Mic, Check, CheckCheck, Circle
+  MessageSquare, Users, Settings, Bell, Moon, Sun, LogOut, User, Shield, Key, Trash2,
+  ChevronLeft, Plus, Circle
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useWallet } from '../context/WalletProvider'
+import { useAppStore } from '../store/useAppStore'
+import BackgroundCanvas from '../components/canvas/BackgroundCanvas'
+import MessageCard, { type Message } from '../components/chat/MessageCard'
+import ChatInput from '../components/chat/ChatInput'
+import ChatHeader from '../components/chat/ChatHeader'
+import ContactList from '../components/chat/ContactList'
+import { SearchBar, FilterBar } from '../components/chat/SearchBar'
+import { TxStatusIndicator, type TxStatus } from '../components/chat/TxStatusIndicator'
 
 interface Contact {
   id: string
@@ -19,76 +27,99 @@ interface Contact {
   online: boolean
 }
 
-interface Message {
-  id: string
-  sender: string
-  content: string
-  timestamp: string
-  direction: 'sent' | 'received'
-  status: 'sent' | 'delivered' | 'read'
-}
-
 const mockContacts: Contact[] = [
   { id: '1', address: '0x1a2b...3c4d', name: 'Alice Chen', avatar: 'AC', lastMessage: 'Hey! Did you see the new update?', timestamp: '2m', unread: 2, online: true },
-  { id: '2', address: '0x5e6f...7g8h', name: 'Bob Smith', avatar: 'BS', lastMessage: 'The transaction went through ✅', timestamp: '15m', unread: 0, online: true },
+  { id: '2', address: '0x5e6f...7g8h', name: 'Bob Smith', avatar: 'BS', lastMessage: 'The transaction went through', timestamp: '15m', unread: 0, online: true },
   { id: '3', address: '0x9i0j...1k2l', name: 'Carol Davis', avatar: 'CD', lastMessage: 'Let me check and get back to you', timestamp: '1h', unread: 0, online: false },
   { id: '4', address: '0x3m4n...5o6p', name: 'David Kim', avatar: 'DK', lastMessage: 'Great, see you tomorrow!', timestamp: '3h', unread: 1, online: false },
-  { id: '5', address: '0x7q8r...9s0t', name: 'Eve Wilson', avatar: 'EW', lastMessage: 'Thanks for the info 🙏', timestamp: '1d', unread: 0, online: true },
+  { id: '5', address: '0x7q8r...9s0t', name: 'Eve Wilson', avatar: 'EW', lastMessage: 'Thanks for the info', timestamp: '1d', unread: 0, online: true },
   { id: '6', address: '0x1u2v...3w4x', name: 'Frank Lee', avatar: 'FL', lastMessage: 'Can you review the contract?', timestamp: '2d', unread: 0, online: false },
 ]
 
 const mockMessages: Record<string, Message[]> = {
   '1': [
-    { id: '1', sender: 'Alice Chen', content: 'Hey! How are you?', timestamp: '10:30 AM', direction: 'received', status: 'read' },
-    { id: '2', sender: 'You', content: 'Doing great! Just checking out Inbox3', timestamp: '10:32 AM', direction: 'sent', status: 'read' },
-    { id: '3', sender: 'Alice Chen', content: 'It\'s amazing right? The encryption is top-notch 🔒', timestamp: '10:33 AM', direction: 'received', status: 'read' },
-    { id: '4', sender: 'You', content: 'Yeah, finally a messaging app that respects privacy', timestamp: '10:35 AM', direction: 'sent', status: 'read' },
-    { id: '5', sender: 'Alice Chen', content: 'Hey! Did you see the new update?', timestamp: '10:40 AM', direction: 'received', status: 'read' },
+    { id: '1', sender: 'Alice Chen', senderAddress: '0x1a2b', content: 'Hey! How are you?', timestamp: '10:30 AM', direction: 'received', status: 'confirmed' },
+    { id: '2', sender: 'You', senderAddress: '0xme', content: 'Doing great! Just checking out Inbox3', timestamp: '10:32 AM', direction: 'sent', status: 'confirmed' },
+    { id: '3', sender: 'Alice Chen', senderAddress: '0x1a2b', content: 'It\'s amazing right? The encryption is top-notch', timestamp: '10:33 AM', direction: 'received', status: 'confirmed' },
+    { id: '4', sender: 'You', senderAddress: '0xme', content: 'Yeah, finally a messaging app that respects privacy', timestamp: '10:35 AM', direction: 'sent', status: 'confirmed' },
+    { id: '5', sender: 'Alice Chen', senderAddress: '0x1a2b', content: 'Hey! Did you see the new update?', timestamp: '10:40 AM', direction: 'received', status: 'confirmed' },
   ],
   '2': [
-    { id: '1', sender: 'Bob Smith', content: 'Did you send the tokens?', timestamp: '9:00 AM', direction: 'received', status: 'read' },
-    { id: '2', sender: 'You', content: 'Yes, just sent them via the smart contract', timestamp: '9:15 AM', direction: 'sent', status: 'read' },
-    { id: '3', sender: 'Bob Smith', content: 'The transaction went through ✅', timestamp: '9:20 AM', direction: 'received', status: 'read' },
+    { id: '1', sender: 'Bob Smith', senderAddress: '0x5e6f', content: 'Did you send the tokens?', timestamp: '9:00 AM', direction: 'received', status: 'confirmed' },
+    { id: '2', sender: 'You', senderAddress: '0xme', content: 'Yes, just sent them via the smart contract', timestamp: '9:15 AM', direction: 'sent', status: 'confirmed' },
+    { id: '3', sender: 'Bob Smith', senderAddress: '0x5e6f', content: 'The transaction went through', timestamp: '9:20 AM', direction: 'received', status: 'confirmed' },
   ],
 }
 
 export default function MainApp() {
   const { user, logout } = useAuth()
+  const { signAndSubmit } = useWallet()
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<'messages' | 'contacts' | 'settings'>('messages')
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
-  const [newMessage, setNewMessage] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [darkMode, setDarkMode] = useState(true)
   const [showSidebar, setShowSidebar] = useState(true)
+  const [txStatus, setTxStatus] = useState<TxStatus>('idle')
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const handleLogout = () => {
-    logout()
-    navigate('/login')
-  }
+  const { performanceMode, togglePerformanceMode } = useAppStore()
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
 
   const handleSelectContact = useCallback((contact: Contact) => {
     setSelectedContact(contact)
     setMessages(mockMessages[contact.id] || [])
     setShowSidebar(false)
+    setTxStatus('idle')
   }, [])
 
-  const handleSendMessage = () => {
-    if (!newMessage.trim() || !selectedContact) return
-    const msg: Message = {
-      id: Date.now().toString(),
+  const handleSend = useCallback(async (content: string, type: 'text' | 'image' | 'voice') => {
+    if (!selectedContact) return
+
+    setTxStatus('signing')
+    const tempId = Date.now().toString()
+    const tempMsg: Message = {
+      id: tempId,
       sender: 'You',
-      content: newMessage.trim(),
+      senderAddress: user?.walletAddress || '0xme',
+      content,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       direction: 'sent',
-      status: 'sent'
+      status: 'mempool',
+      type,
     }
-    setMessages(prev => [...prev, msg])
-    setNewMessage('')
-    setTimeout(() => {
-      setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, status: 'delivered' } : m))
-    }, 1000)
+    setMessages(prev => [...prev, tempMsg])
+
+    setTxStatus('submitting')
+    const hash = await signAndSubmit({ content, recipient: selectedContact.address })
+
+    setMessages(prev => prev.map(m =>
+      m.id === tempId ? { ...m, status: hash ? 'confirmed' : 'failed' } : m
+    ))
+    setTxStatus(hash ? 'confirmed' : 'failed')
+
+    setTimeout(() => setTxStatus('idle'), 3000)
+  }, [selectedContact, user, signAndSubmit])
+
+  const handleReact = useCallback((messageId: string, emoji: string) => {
+    setMessages(prev => prev.map(m => {
+      if (m.id !== messageId) return m
+      const reactions = m.reactions || []
+      const existing = reactions.find(r => r.emoji === emoji)
+      if (existing) {
+        return { ...m, reactions: reactions.map(r => r.emoji === emoji ? { ...r, count: r.count + 1 } : r) }
+      }
+      return { ...m, reactions: [...reactions, { emoji, count: 1, users: ['you'] }] }
+    }))
+  }, [])
+
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
   }
 
   const filteredContacts = mockContacts.filter(c =>
@@ -97,7 +128,9 @@ export default function MainApp() {
   )
 
   return (
-    <div className="flex h-screen w-full bg-black text-white overflow-hidden">
+    <div className="flex h-screen w-full bg-black/80 backdrop-blur-xl text-white overflow-hidden">
+      <BackgroundCanvas />
+
       {/* Sidebar */}
       <AnimatePresence>
         {(showSidebar || window.innerWidth >= 1024) && (
@@ -106,7 +139,7 @@ export default function MainApp() {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -300, opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className={`${selectedContact && window.innerWidth < 1024 ? 'hidden' : 'flex'} flex-col w-full lg:w-96 lg:min-w-96 border-r border-white/5 bg-black`}
+            className={`${selectedContact && window.innerWidth < 1024 ? 'hidden' : 'flex'} flex-col w-full lg:w-96 lg:min-w-96 border-r border-white/5 bg-black/50 backdrop-blur-xl relative z-10`}
           >
             {/* Header */}
             <div className="p-4 border-b border-white/5">
@@ -121,22 +154,12 @@ export default function MainApp() {
                   </button>
                   <button className="p-2 rounded-lg hover:bg-white/5 transition-colors relative">
                     <Bell className="w-4 h-4 text-white/60" />
-                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-gradient-brand rounded-full" />
+                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-gradient-to-r from-[#A855F7] to-[#FF6B35] rounded-full" />
                   </button>
                 </div>
               </div>
 
-              {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-                <input
-                  type="text"
-                  placeholder="Search messages..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-brand-gray rounded-xl h-10 pl-10 pr-4 text-sm text-white placeholder:text-white/20 focus:ring-2 focus:ring-white/10 focus:outline-none"
-                />
-              </div>
+              <SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="Search messages..." />
             </div>
 
             {/* Tabs */}
@@ -161,50 +184,16 @@ export default function MainApp() {
               ))}
             </div>
 
+            <FilterBar onFilter={() => {}} />
+
             {/* Content */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 flex flex-col overflow-hidden">
               {activeTab === 'messages' && (
-                <div className="p-2">
-                  {filteredContacts.map((contact, i) => (
-                    <motion.button
-                      key={contact.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.03 }}
-                      onClick={() => handleSelectContact(contact)}
-                      className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors text-left ${
-                        selectedContact?.id === contact.id ? 'bg-white/5' : 'hover:bg-white/5'
-                      }`}
-                    >
-                      <div className="relative">
-                        <div className="w-11 h-11 rounded-full bg-gradient-brand flex items-center justify-center text-sm font-semibold">
-                          {contact.avatar}
-                        </div>
-                        {contact.online && (
-                          <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-black" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-white truncate">{contact.name}</span>
-                          <span className="text-xs text-white/30 ml-2">{contact.timestamp}</span>
-                        </div>
-                        <div className="flex items-center justify-between mt-0.5">
-                          <p className="text-xs text-white/40 truncate">{contact.lastMessage}</p>
-                          {contact.unread > 0 && (
-                            <span className="ml-2 w-5 h-5 bg-gradient-brand rounded-full flex items-center justify-center text-[10px] font-semibold">
-                              {contact.unread}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </motion.button>
-                  ))}
-                </div>
+                <ContactList contacts={filteredContacts} onSelect={handleSelectContact} />
               )}
 
               {activeTab === 'contacts' && (
-                <div className="p-4">
+                <div className="p-4 space-y-2 overflow-y-auto flex-1">
                   <p className="text-sm text-white/40 mb-4">Your decentralized contacts</p>
                   {mockContacts.map((contact, i) => (
                     <motion.div
@@ -212,9 +201,9 @@ export default function MainApp() {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.05 }}
-                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors mb-1"
+                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors"
                     >
-                      <div className="w-10 h-10 rounded-full bg-brand-gray flex items-center justify-center text-sm font-medium">
+                      <div className="w-10 h-10 rounded-full bg-[#1A1A1A] flex items-center justify-center text-sm font-medium">
                         {contact.avatar}
                       </div>
                       <div className="flex-1">
@@ -228,12 +217,13 @@ export default function MainApp() {
               )}
 
               {activeTab === 'settings' && (
-                <div className="p-4 space-y-1">
+                <div className="p-4 space-y-1 overflow-y-auto flex-1">
                   {[
                     { icon: User, label: 'Profile', desc: 'Edit your identity' },
                     { icon: Bell, label: 'Notifications', desc: 'Manage alerts' },
                     { icon: Shield, label: 'Privacy', desc: 'Encryption & security' },
                     { icon: Key, label: 'Keys', desc: 'Manage encryption keys' },
+                    { icon: performanceMode ? Sun : Moon, label: performanceMode ? 'Performance Mode' : 'Standard Mode', desc: performanceMode ? '3D effects disabled' : 'Full animations enabled', action: togglePerformanceMode },
                     { icon: Trash2, label: 'Clear Data', desc: 'Remove local data' },
                   ].map((item, i) => (
                     <motion.button
@@ -241,6 +231,7 @@ export default function MainApp() {
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.05 }}
+                      onClick={item.action}
                       className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors text-left"
                     >
                       <item.icon className="w-4 h-4 text-white/40" />
@@ -267,7 +258,7 @@ export default function MainApp() {
                 {user?.avatar ? (
                   <img src={user.avatar} alt={user.name} className="w-9 h-9 rounded-full object-cover" />
                 ) : (
-                  <div className="w-9 h-9 rounded-full bg-gradient-brand flex items-center justify-center text-xs font-semibold">
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#A855F7] to-[#FF6B35] flex items-center justify-center text-xs font-semibold">
                     {(user?.name || 'ME').slice(0, 2).toUpperCase()}
                   </div>
                 )}
@@ -283,124 +274,34 @@ export default function MainApp() {
       </AnimatePresence>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col relative z-10 bg-black/30">
         {selectedContact ? (
           <>
-            {/* Chat Header */}
-            <div className="flex items-center justify-between p-4 border-b border-white/5">
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => { setShowSidebar(true); setSelectedContact(null) }}
-                  className="lg:hidden p-2 rounded-lg hover:bg-white/5 transition-colors"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                </button>
-                <div className="relative">
-                  <div className="w-9 h-9 rounded-full bg-gradient-brand flex items-center justify-center text-xs font-semibold">
-                    {selectedContact.avatar}
-                  </div>
-                  {selectedContact.online && (
-                    <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-black" />
-                  )}
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-white">{selectedContact.name}</p>
-                  <p className="text-xs text-white/30">
-                    {selectedContact.online ? 'Online' : 'Last seen recently'}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-1">
-                <button className="p-2 rounded-lg hover:bg-white/5 transition-colors">
-                  <Phone className="w-4 h-4 text-white/60" />
-                </button>
-                <button className="p-2 rounded-lg hover:bg-white/5 transition-colors">
-                  <Video className="w-4 h-4 text-white/60" />
-                </button>
-                <button className="p-2 rounded-lg hover:bg-white/5 transition-colors">
-                  <MoreVertical className="w-4 h-4 text-white/60" />
-                </button>
-              </div>
-            </div>
+            <ChatHeader contact={selectedContact} onBack={() => { setShowSidebar(true); setSelectedContact(null) }} />
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="flex-1 overflow-y-auto p-4 space-y-2">
               {messages.map((msg, i) => (
-                <motion.div
+                <MessageCard
                   key={msg.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  className={`flex ${msg.direction === 'sent' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div className={`max-w-[70%] px-4 py-2.5 rounded-2xl ${
-                    msg.direction === 'sent'
-                      ? 'bg-gradient-brand text-white rounded-br-md'
-                      : 'bg-brand-gray text-white rounded-bl-md'
-                  }`}>
-                    <p className="text-sm leading-relaxed">{msg.content}</p>
-                    <div className={`flex items-center gap-1 mt-1 ${msg.direction === 'sent' ? 'justify-end' : ''}`}>
-                      <span className="text-[10px] text-white/50">{msg.timestamp}</span>
-                      {msg.direction === 'sent' && (
-                        msg.status === 'read' ? (
-                          <CheckCheck className="w-3 h-3 text-white/70" />
-                        ) : (
-                          <Check className="w-3 h-3 text-white/50" />
-                        )
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
+                  message={msg}
+                  onReact={handleReact}
+                  isLast={i === messages.length - 1}
+                />
               ))}
+              <div ref={messagesEndRef} />
             </div>
 
-            {/* Message Input */}
-            <div className="p-4 border-t border-white/5">
-              <div className="flex items-center gap-2">
-                <button className="p-2 rounded-lg hover:bg-white/5 transition-colors">
-                  <Paperclip className="w-4 h-4 text-white/40" />
-                </button>
-                <div className="flex-1 relative">
-                  <input
-                    type="text"
-                    placeholder="Type a message..."
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                    className="w-full bg-brand-gray rounded-xl h-11 px-4 pr-10 text-sm text-white placeholder:text-white/20 focus:ring-2 focus:ring-white/10 focus:outline-none"
-                  />
-                  <button className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-white/10 transition-colors">
-                    <Smile className="w-4 h-4 text-white/40" />
-                  </button>
-                </div>
-                {newMessage.trim() ? (
-                  <button
-                    onClick={handleSendMessage}
-                    className="p-2.5 rounded-xl bg-gradient-brand hover:opacity-90 transition-all active:scale-95"
-                  >
-                    <Send className="w-4 h-4 text-white" />
-                  </button>
-                ) : (
-                  <button className="p-2.5 rounded-xl bg-brand-gray hover:bg-white/10 transition-colors">
-                    <Mic className="w-4 h-4 text-white/40" />
-                  </button>
-                )}
-              </div>
-              <p className="text-[10px] text-white/20 text-center mt-2 flex items-center justify-center gap-1">
-                <Shield className="w-3 h-3" />
-                End-to-end encrypted. Only you and {selectedContact.name} can read this.
-              </p>
-            </div>
+            <TxStatusIndicator status={txStatus} />
+            <ChatInput onSend={handleSend} disabled={txStatus === 'signing' || txStatus === 'submitting'} />
           </>
         ) : (
-          /* Empty State */
           <div className="flex-1 flex items-center justify-center">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               className="text-center max-w-sm"
             >
-              <div className="w-20 h-20 mx-auto mb-6 rounded-3xl bg-gradient-brand/10 flex items-center justify-center">
+              <div className="w-20 h-20 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-[#A855F7]/10 to-[#FF6B35]/10 flex items-center justify-center">
                 <MessageSquare className="w-10 h-10 text-white/20" />
               </div>
               <h2 className="text-2xl font-medium text-white mb-2" style={{ letterSpacing: '-0.02em' }}>
@@ -409,8 +310,8 @@ export default function MainApp() {
               <p className="text-white/40 text-sm leading-relaxed mb-6">
                 Select a conversation from the sidebar or start a new one to begin your encrypted journey.
               </p>
-              <button className="inline-flex items-center gap-2 bg-gradient-brand text-white text-sm font-medium px-6 py-2.5 rounded-full hover:opacity-90 transition-all active:scale-95">
-                <Send className="w-4 h-4" />
+              <button className="inline-flex items-center gap-2 bg-gradient-to-r from-[#A855F7] to-[#FF6B35] text-white text-sm font-medium px-6 py-2.5 rounded-full hover:opacity-90 transition-all active:scale-95">
+                <Plus className="w-4 h-4" />
                 New Message
               </button>
             </motion.div>
