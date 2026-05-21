@@ -16,7 +16,7 @@ async function getAptos(): Promise<AptosClient> {
   if (!aptosInstance) {
     const { Aptos, AptosConfig, Network } = await import('@aptos-labs/ts-sdk')
 
-    const envNetwork = import.meta.env.VITE_NETWORK
+    const envNetwork = import.meta.env.VITE_APTOS_NETWORK
 
     let network: (typeof Network)[keyof typeof Network]
     switch (envNetwork?.trim().toLowerCase()) {
@@ -33,7 +33,7 @@ async function getAptos(): Promise<AptosClient> {
         network = Network.LOCAL
         break
       default:
-        console.warn(`Unrecognized VITE_NETWORK "${envNetwork}", falling back to Testnet`)
+        console.warn(`Unrecognized VITE_APTOS_NETWORK "${envNetwork}", falling back to Testnet`)
         network = Network.TESTNET
     }
 
