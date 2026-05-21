@@ -1,6 +1,9 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import LandingPage from './pages/LandingPage'
 import SignupPage from './pages/SignupPage'
+import LoginPage from './pages/LoginPage'
+import WalletConnectPage from './pages/WalletConnectPage'
+import MainApp from './pages/MainApp'
 
 export default function App() {
   return (
@@ -8,6 +11,9 @@ export default function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/signup" element={<SignupPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/wallet" element={<WalletConnectPage />} />
+        <Route path="/app" element={<MainApp />} />
       </Routes>
     </BrowserRouter>
   )
