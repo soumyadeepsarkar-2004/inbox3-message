@@ -1,4 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
+import { Network } from '@aptos-labs/ts-sdk'
 import { createContext, useContext, useCallback, type ReactNode } from 'react'
 import {
   useWallet as useWalletAdapter,
@@ -96,7 +97,7 @@ export function Inbox3WalletProvider({ children }: { children: ReactNode }) {
   return (
     <AptosWalletAdapterProvider
       autoConnect={false}
-      dappConfig={{ network: 'Testnet' as never }}
+      dappConfig={{ network: Network.TESTNET }}
       onError={(error) => {
         console.error('Wallet adapter error:', error)
       }}
