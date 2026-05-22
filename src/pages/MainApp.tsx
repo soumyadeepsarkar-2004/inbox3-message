@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { MessageSquare, Users, Settings, Bell, Moon, Sun, LogOut, User, Shield, Key, Trash2, ChevronLeft, Plus, Circle } from 'lucide-react'
+import { MessageSquare, Users, Settings, Bell, Moon, Sun, LogOut, User, Shield, Key, Trash2, ChevronLeft, Plus, Circle, Hash, Eye } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useWallet } from '../context/WalletProvider'
@@ -11,6 +11,8 @@ import ContactList from '../components/chat/ContactList'
 import { SearchBar, FilterBar } from '../components/chat/SearchBar'
 import { TxStatusIndicator, type TxStatus } from '../components/chat/TxStatusIndicator'
 import ComposeMessageModal from '../components/chat/ComposeMessageModal'
+import ChannelPanel from '../components/chat/ChannelPanel'
+import PremiumMessagingPanel from '../components/chat/PremiumMessagingPanel'
 import { useContactManager, type Contact } from '../hooks/useContactManager'
 import { EncryptionManager } from '../lib/crypto'
 
@@ -27,7 +29,7 @@ export default function MainApp() {
   const { signAndSubmit } = useWallet()
   const navigate = useNavigate()
   const { contacts, addContact, searchContacts, markRead, updateContact } = useContactManager()
-  const [activeTab, setActiveTab] = useState<'messages' | 'contacts' | 'settings'>('messages')
+  const [activeTab, setActiveTab] = useState<'messages' | 'contacts' | 'channels' | 'settings'>('messages')
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [searchQuery, setSearchQuery] = useState('')
@@ -36,8 +38,6 @@ export default function MainApp() {
   const [txStatus, setTxStatus] = useState<TxStatus>('idle')
   const [showCompose, setShowCompose] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-
-
 
   useEffect(() => {
     if (!encryptionManager.loadKeys()) {
@@ -221,6 +221,7 @@ export default function MainApp() {
           {[
             { id: 'messages' as const, icon: MessageSquare, label: 'Messages' },
             { id: 'contacts' as const, icon: Users, label: 'Contacts' },
+            { id: 'channels' as const, icon: Hash, label: 'Channels' },
             { id: 'settings' as const, icon: Settings, label: 'Settings' },
           ].map(tab => (
             <button
@@ -279,32 +280,44 @@ export default function MainApp() {
             </div>
           )}
 
+          {activeTab === 'channels' && (
+            <div className="overflow-y-auto flex-1">
+              <ChannelPanel />
+            </div>
+          )}
+
           {activeTab === 'settings' && (
-            <div className="p-4 space-y-1 overflow-y-auto flex-1">
-              {[
-                { icon: User, label: 'Profile', desc: 'Edit your identity' },
-                { icon: Bell, label: 'Notifications', desc: 'Manage alerts' },
-                { icon: Shield, label: 'Privacy', desc: 'Encryption & security' },
-                { icon: Key, label: 'Keys', desc: 'Manage encryption keys' },
-                { icon: Trash2, label: 'Clear Data', desc: 'Remove local data' },
-              ].map((item) => (
-                <button
-                  key={item.label}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors text-left"
-                >
-                  <item.icon className="w-4 h-4 text-white/40" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-white">{item.label}</p>
-                    <p className="text-xs text-white/30">{item.desc}</p>
-                  </div>
-                  <ChevronLeft className="w-4 h-4 text-white/20 rotate-180" />
-                </button>
-              ))}
-              <div className="pt-4 mt-4 border-t border-white/5">
-                <button onClick={handleLogout} className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors text-left text-red-400">
-                  <LogOut className="w-4 h-4" />
-                  <span className="text-sm font-medium">Disconnect</span>
-                </button>
+            <div className="overflow-y-auto flex-1">
+              <div className="p-4 space-y-1">
+                <div className="border-b border-white/[0.04] pb-3 mb-3">
+                  <PremiumMessagingPanel />
+                </div>
+                {[
+                  { icon: User, label: 'Profile', desc: 'Edit your identity' },
+                  { icon: Bell, label: 'Notifications', desc: 'Manage alerts' },
+                  { icon: Shield, label: 'Privacy', desc: 'End-to-end encryption' },
+                  { icon: Key, label: 'Keys', desc: 'NaCl box keypair' },
+                  { icon: Eye, label: 'ZK Privacy', desc: 'Anonymous ephemeral keys' },
+                  { icon: Trash2, label: 'Clear Data', desc: 'Remove local data' },
+                ].map((item) => (
+                  <button
+                    key={item.label}
+                    className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors text-left"
+                  >
+                    <item.icon className="w-4 h-4 text-white/40" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-white">{item.label}</p>
+                      <p className="text-xs text-white/30">{item.desc}</p>
+                    </div>
+                    <ChevronLeft className="w-4 h-4 text-white/20 rotate-180" />
+                  </button>
+                ))}
+                <div className="pt-4 mt-4 border-t border-white/5">
+                  <button onClick={handleLogout} className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors text-left text-red-400">
+                    <LogOut className="w-4 h-4" />
+                    <span className="text-sm font-medium">Disconnect</span>
+                  </button>
+                </div>
               </div>
             </div>
           )}

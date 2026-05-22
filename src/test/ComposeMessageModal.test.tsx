@@ -14,7 +14,7 @@ describe('ComposeMessageModal', () => {
     render(
       <ComposeMessageModal open={true} onClose={() => {}} onSend={() => {}} />
     )
-    expect(screen.getByPlaceholderText('0x1a2b...3c4d')).toBeDefined()
+    expect(screen.getByPlaceholderText('0x1a2b...3c4d or alice.apt')).toBeDefined()
     expect(screen.getByPlaceholderText('Alice')).toBeDefined()
     expect(screen.getByPlaceholderText('Type your encrypted message...')).toBeDefined()
   })
@@ -24,14 +24,14 @@ describe('ComposeMessageModal', () => {
       <ComposeMessageModal open={true} onClose={() => {}} onSend={() => {}} />
     )
     fireEvent.click(screen.getByText('Send Encrypted Message'))
-    expect(screen.getByText('Wallet address is required')).toBeDefined()
+    expect(screen.getByText('Wallet address or .apt name is required')).toBeDefined()
   })
 
   it('shows error for invalid address format', () => {
     render(
       <ComposeMessageModal open={true} onClose={() => {}} onSend={() => {}} />
     )
-    fireEvent.change(screen.getByPlaceholderText('0x1a2b...3c4d'), { target: { value: 'invalid' } })
+    fireEvent.change(screen.getByPlaceholderText('0x1a2b...3c4d or alice.apt'), { target: { value: 'invalid' } })
     fireEvent.change(screen.getByPlaceholderText('Type your encrypted message...'), { target: { value: 'hello' } })
     fireEvent.click(screen.getByText('Send Encrypted Message'))
     expect(screen.getByText(/Invalid Aptos wallet address/)).toBeDefined()
@@ -42,7 +42,7 @@ describe('ComposeMessageModal', () => {
     render(
       <ComposeMessageModal open={true} onClose={() => {}} onSend={onSend} />
     )
-    fireEvent.change(screen.getByPlaceholderText('0x1a2b...3c4d'), { target: { value: '0x1234567890abcdef' } })
+    fireEvent.change(screen.getByPlaceholderText('0x1a2b...3c4d or alice.apt'), { target: { value: '0x1234567890abcdef' } })
     fireEvent.change(screen.getByPlaceholderText('Alice'), { target: { value: 'Alice' } })
     fireEvent.change(screen.getByPlaceholderText('Type your encrypted message...'), { target: { value: 'Hello!' } })
     fireEvent.click(screen.getByText('Send Encrypted Message'))

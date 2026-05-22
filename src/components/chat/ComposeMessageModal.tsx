@@ -1,5 +1,8 @@
-import { useState } from 'react'
-import { X, Send, ArrowRight } from 'lucide-react'
+import { useState, useCallback } from 'react'
+import { X, Send, ArrowRight, Zap, Eye, Loader } from 'lucide-react'
+import { useANS } from '../../hooks/useANS'
+import { useAnonymousMessaging } from '../../hooks/useAnonymousMessaging'
+import { toast } from 'sonner'
 
 interface ComposeMessageModalProps {
   open: boolean
@@ -12,21 +15,54 @@ export default function ComposeMessageModal({ open, onClose, onSend }: ComposeMe
   const [name, setName] = useState('')
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const [premium, setPremium] = useState(false)
+  const [anonymous, setAnonymous] = useState(false)
+  const [resolving, setResolving] = useState(false)
+  const [resolvedName, setResolvedName] = useState<string | null>(null)
 
-  if (!open) return null
+  const { resolveName } = useANS()
+  const { generateEpochalKey } = useAnonymousMessaging()
 
   const isValidAddress = (addr: string) => /^0x[a-fA-F0-9]{1,64}$/.test(addr)
+  const isANSName = (addr: string) => /\.apt$/i.test(addr)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleAddressChange = useCallback(async (value: string) => {
+    setAddress(value)
+    setError('')
+    setResolvedName(null)
+
+    if (isANSName(value)) {
+      setResolving(true)
+      const result = await resolveName(value)
+      setResolving(false)
+      if (result.address) {
+        setResolvedName(result.address)
+      } else {
+        setError('Could not resolve .apt name')
+      }
+    }
+  }, [resolveName])
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
 
-    if (!address.trim()) {
-      setError('Wallet address is required')
+    let targetAddress = address.trim()
+
+    if (!targetAddress) {
+      setError('Wallet address or .apt name is required')
       return
     }
 
-    if (!isValidAddress(address.trim())) {
+    if (isANSName(targetAddress)) {
+      if (!resolvedName) {
+        setError('Resolving .apt name...')
+        return
+      }
+      targetAddress = resolvedName
+    }
+
+    if (!isValidAddress(targetAddress)) {
       setError('Invalid Aptos wallet address (must start with 0x)')
       return
     }
@@ -36,13 +72,36 @@ export default function ComposeMessageModal({ open, onClose, onSend }: ComposeMe
       return
     }
 
-    const senderKey = localStorage.getItem('inbox3_public_key') || undefined
-    onSend(address.trim(), name.trim() || address.trim().slice(0, 8), message.trim(), senderKey)
+    let senderKey = localStorage.getItem('inbox3_public_key') || undefined
+
+    if (anonymous) {
+      const epochal = await generateEpochalKey()
+      if (epochal) {
+        senderKey = epochal.publicKey
+        toast.success('Anonymous mode: using ephemeral key')
+      }
+    }
+
+    let finalMessage = message.trim()
+    if (premium) {
+      finalMessage = `[PREMIUM] ${finalMessage}`
+    }
+    if (anonymous) {
+      finalMessage = `[ANON] ${finalMessage}`
+    }
+
+    const displayName = name.trim() || (resolvedName ? address.trim() : targetAddress.slice(0, 8))
+    onSend(targetAddress, displayName, finalMessage, senderKey)
     setAddress('')
     setName('')
     setMessage('')
+    setPremium(false)
+    setAnonymous(false)
+    setResolvedName(null)
     onClose()
   }
+
+  if (!open) return null
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -57,14 +116,26 @@ export default function ComposeMessageModal({ open, onClose, onSend }: ComposeMe
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="text-xs font-mono text-slate-400 mb-1.5 block">Recipient Aptos Address</label>
-            <input
-              type="text"
-              placeholder="0x1a2b...3c4d"
-              value={address}
-              onChange={e => setAddress(e.target.value)}
-              className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl h-10 px-4 text-sm text-white placeholder:text-slate-600 focus:ring-1 focus:ring-white/10 focus:outline-none transition-all font-mono"
-            />
+            <label className="text-xs font-mono text-slate-400 mb-1.5 block">Recipient Address or .apt Name</label>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="0x1a2b...3c4d or alice.apt"
+                value={address}
+                onChange={e => handleAddressChange(e.target.value)}
+                className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl h-10 px-4 text-sm text-white placeholder:text-slate-600 focus:ring-1 focus:ring-white/10 focus:outline-none transition-all font-mono pr-10"
+              />
+              {resolving && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <Loader className="w-4 h-4 text-[#A855F7] animate-spin" />
+                </div>
+              )}
+            </div>
+            {resolvedName && (
+              <p className="text-[10px] text-green-400 font-mono mt-1">
+                → {resolvedName}
+              </p>
+            )}
           </div>
 
           <div>
@@ -89,16 +160,63 @@ export default function ComposeMessageModal({ open, onClose, onSend }: ComposeMe
             />
           </div>
 
+          <div className="flex items-center gap-4">
+            <label className="flex items-center gap-2 cursor-pointer group">
+              <button
+                type="button"
+                onClick={() => setPremium(!premium)}
+                role="switch"
+                aria-checked={premium}
+                className={`relative w-8 h-4 rounded-full transition-colors ${
+                  premium ? 'bg-[#FF6B35]' : 'bg-white/10'
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform ${
+                    premium ? 'translate-x-4' : 'translate-x-0.5'
+                  }`}
+                />
+              </button>
+              <span className="flex items-center gap-1 text-xs text-white/40 group-hover:text-white/60 transition-colors">
+                <Zap className="w-3 h-3" />
+                Premium (x402)
+              </span>
+            </label>
+
+            <label className="flex items-center gap-2 cursor-pointer group">
+              <button
+                type="button"
+                onClick={() => setAnonymous(!anonymous)}
+                role="switch"
+                aria-checked={anonymous}
+                className={`relative w-8 h-4 rounded-full transition-colors ${
+                  anonymous ? 'bg-[#A855F7]' : 'bg-white/10'
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform ${
+                    anonymous ? 'translate-x-4' : 'translate-x-0.5'
+                  }`}
+                />
+              </button>
+              <span className="flex items-center gap-1 text-xs text-white/40 group-hover:text-white/60 transition-colors">
+                <Eye className="w-3 h-3" />
+                Anonymous
+              </span>
+            </label>
+          </div>
+
           {error && (
             <p className="text-xs text-red-400 font-mono">{error}</p>
           )}
 
           <button
             type="submit"
-            className="w-full h-11 bg-gradient-to-r from-[#A855F7] to-[#FF6B35] text-white font-semibold rounded-xl hover:opacity-90 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 text-sm"
+            disabled={resolving}
+            className="w-full h-11 bg-gradient-to-r from-[#A855F7] to-[#FF6B35] text-white font-semibold rounded-xl hover:opacity-90 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2 text-sm"
           >
             <Send className="w-3.5 h-3.5" />
-            Send Encrypted Message
+            {anonymous ? 'Send Anonymously' : premium ? 'Send Premium' : 'Send Encrypted Message'}
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </form>
