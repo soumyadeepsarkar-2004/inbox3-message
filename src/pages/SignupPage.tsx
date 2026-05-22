@@ -1,56 +1,8 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Circle, Eye, EyeOff, ArrowRight, Globe, Code } from 'lucide-react'
+import { Circle, Eye, EyeOff, Globe, Code } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-
-interface StepItemProps {
-  number: number
-  text: string
-  active?: boolean
-}
-
-function StepItem({ number, text, active }: StepItemProps) {
-  return (
-    <div className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 ${active ? 'bg-white text-black border border-white' : 'bg-brand-gray text-white border-none'}`}>
-      <span className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-medium ${active ? 'bg-black text-white' : 'bg-white/10 text-white/40'}`}>
-        {number}
-      </span>
-      <span className="text-sm font-medium">{text}</span>
-    </div>
-  )
-}
-
-interface InputGroupProps {
-  label: string
-  placeholder: string
-  type?: string
-  trailing?: React.ReactNode
-  value: string
-  onChange: (v: string) => void
-}
-
-function InputGroup({ label, placeholder, type = 'text', trailing, value, onChange }: InputGroupProps) {
-  return (
-    <div className="space-y-2">
-      <label className="text-sm font-medium text-white">{label}</label>
-      <div className="relative">
-        <input
-          type={type}
-          placeholder={placeholder}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full bg-brand-gray border-none rounded-xl h-11 px-4 text-white placeholder:text-white/20 focus:ring-2 focus:ring-white/20 focus:outline-none transition-all duration-200"
-        />
-        {trailing && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2">
-            {trailing}
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
 
 export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -80,7 +32,7 @@ export default function SignupPage() {
 
   return (
     <main className="flex min-h-screen w-full bg-black selection:bg-white/30 p-2 transition-all duration-500 lg:h-screen lg:overflow-hidden lg:p-4">
-      {/* Left Column - Hero */}
+      {/* Left Column */}
       <div className="hidden lg:flex w-[52%] relative flex-col items-center justify-end pb-32 px-12 rounded-3xl overflow-hidden shadow-2xl h-full">
         <video autoPlay muted loop playsInline className="absolute inset-0 w-full h-full object-cover">
           <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260506_081238_406ed0e3-5d83-436e-a512-0bbff7ec5b95.mp4" type="video/mp4" />
@@ -94,13 +46,13 @@ export default function SignupPage() {
         >
           <motion.div className="flex items-center gap-2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
             <Circle className="fill-white text-white w-6 h-6" />
-            <span className="text-xl font-semibold tracking-tight text-white">Inbox3</span>
+            <span className="text-xl font-semibold tracking-tight">Inbox3</span>
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-            <h2 className="text-4xl font-medium tracking-tight whitespace-nowrap text-white">Join Inbox3</h2>
+            <h2 className="text-4xl font-medium tracking-tight whitespace-nowrap">Join Inbox3</h2>
             <p className="text-white/60 text-sm leading-relaxed px-4 mt-2">
-              Follow these 3 quick phases to activate your decentralized identity.
+              Follow these 3 quick phases to activate your space.
             </p>
           </motion.div>
 
@@ -112,7 +64,7 @@ export default function SignupPage() {
         </motion.div>
       </div>
 
-      {/* Right Column - Form */}
+      {/* Right Column */}
       <div className="flex-1 flex flex-col items-center justify-center py-12 lg:py-6 px-4 sm:px-12 lg:px-16 xl:px-24 overflow-y-auto lg:overflow-hidden">
         <motion.div
           className="w-full max-w-xl space-y-8 lg:space-y-6 sm:space-y-10"
@@ -121,27 +73,13 @@ export default function SignupPage() {
           transition={{ duration: 0.8, ease: 'easeOut' }}
         >
           <div>
-            <h1 className="text-3xl font-medium tracking-tight text-white">Create New Profile</h1>
+            <h1 className="text-3xl font-medium tracking-tight">Create New Profile</h1>
             <p className="text-white/40 text-sm mt-1">Input your basic details to begin the journey.</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <button
-              onClick={handleGoogle}
-              disabled={loading}
-              className="flex items-center justify-center gap-3 w-full h-12 bg-black border border-white/10 rounded-xl hover:bg-white/5 transition-colors duration-200 disabled:opacity-50"
-            >
-              <Globe className="w-5 h-5 text-white/80" />
-              <span className="text-sm font-medium text-white/80">Google</span>
-            </button>
-            <button
-              onClick={handleGithub}
-              disabled={loading}
-              className="flex items-center justify-center gap-3 w-full h-12 bg-black border border-white/10 rounded-xl hover:bg-white/5 transition-colors duration-200 disabled:opacity-50"
-            >
-              <Code className="w-5 h-5 text-white/80" />
-              <span className="text-sm font-medium text-white/80">GitHub</span>
-            </button>
+            <SocialButton icon={<Globe className="w-5 h-5 text-white/80" />} label="Google" onClick={handleGoogle} disabled={loading} />
+            <SocialButton icon={<Code className="w-5 h-5 text-white/80" />} label="GitHub" onClick={handleGithub} disabled={loading} />
           </div>
 
           <div className="relative flex items-center">
@@ -156,6 +94,7 @@ export default function SignupPage() {
               <InputGroup label="Last Name" placeholder="Doe" value={lastName} onChange={setLastName} />
             </div>
             <InputGroup label="Email" placeholder="john@example.com" type="email" value={email} onChange={setEmail} />
+            
             <div className="space-y-2">
               <label className="text-sm font-medium text-white">Password</label>
               <div className="relative">
@@ -174,7 +113,7 @@ export default function SignupPage() {
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-              <p className="text-xs text-white/30">Requires at least 8 symbols.</p>
+              <p className="text-xs text-white/30 mt-1">Requires at least 8 symbols.</p>
             </div>
 
             <button
@@ -185,10 +124,7 @@ export default function SignupPage() {
               {loading ? (
                 <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
               ) : (
-                <>
-                  Create Account
-                  <ArrowRight className="w-4 h-4" />
-                </>
+                'Create Account'
               )}
             </button>
           </form>
@@ -202,5 +138,45 @@ export default function SignupPage() {
         </motion.div>
       </div>
     </main>
+  )
+}
+
+function StepItem({ number, text, active }: { number: number; text: string; active?: boolean }) {
+  return (
+    <div className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 ${active ? 'bg-white text-black border border-white' : 'bg-brand-gray text-white border-none'}`}>
+      <span className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-medium ${active ? 'bg-black text-white' : 'bg-white/10 text-white/40'}`}>
+        {number}
+      </span>
+      <span className="text-sm font-medium">{text}</span>
+    </div>
+  )
+}
+
+function SocialButton({ icon, label, onClick, disabled }: { icon: React.ReactNode; label: string; onClick: () => void; disabled?: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="flex items-center justify-center gap-3 w-full h-12 bg-black border border-white/10 rounded-xl hover:bg-white/5 transition-colors duration-200 disabled:opacity-50"
+    >
+      {icon}
+      <span className="text-sm font-medium text-white/80">{label}</span>
+    </button>
+  )
+}
+
+function InputGroup({ label, placeholder, type = 'text', value, onChange }: { label: string; placeholder: string; type?: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="space-y-2">
+      <label className="text-sm font-medium text-white">{label}</label>
+      <input
+        type={type}
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full bg-brand-gray border-none rounded-xl h-11 px-4 text-white placeholder:text-white/20 focus:ring-2 focus:ring-white/20 focus:outline-none transition-all duration-200"
+      />
+    </div>
   )
 }

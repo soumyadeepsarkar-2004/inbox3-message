@@ -1,4 +1,4 @@
-import { ArrowRight, Shield, Zap, Globe, Lock, Users } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 function LogoIcon({ className }: { className?: string }) {
@@ -10,31 +10,30 @@ function LogoIcon({ className }: { className?: string }) {
 }
 
 const brands = [
-  { name: 'Aptos', style: { fontFamily: 'Georgia, serif', fontWeight: 700, letterSpacing: '-0.02em', fontSize: '15px' } },
-  { name: 'PETRA', style: { fontFamily: 'Arial, sans-serif', fontWeight: 900, letterSpacing: '0.08em', fontSize: '13px', textTransform: 'uppercase' as const } },
-  { name: 'Pontem', style: { fontFamily: '"Trebuchet MS", sans-serif', fontWeight: 600, letterSpacing: '0.01em', fontSize: '15px', fontStyle: 'italic' as const } },
-  { name: 'AARON', style: { fontFamily: '"Courier New", monospace', fontWeight: 700, letterSpacing: '0.12em', fontSize: '13px', textTransform: 'uppercase' as const } },
-  { name: 'Liquidswap', style: { fontFamily: 'Palatino, "Book Antiqua", serif', fontWeight: 400, letterSpacing: '-0.01em', fontSize: '16px' } },
-  { name: 'THALA', style: { fontFamily: 'Impact, "Arial Narrow", sans-serif', fontWeight: 400, letterSpacing: '0.04em', fontSize: '14px' } },
-  { name: 'Echo', style: { fontFamily: 'Verdana, sans-serif', fontWeight: 700, letterSpacing: '-0.03em', fontSize: '13px' } },
+  { name: 'Stripe', style: { fontFamily: 'Georgia, serif', fontWeight: 700, letterSpacing: '-0.02em', fontSize: '15px' } },
+  { name: 'COINBASE', style: { fontFamily: 'Arial, sans-serif', fontWeight: 900, letterSpacing: '0.08em', fontSize: '13px', textTransform: 'uppercase' as const } },
+  { name: 'Uniswap', style: { fontFamily: '"Trebuchet MS", sans-serif', fontWeight: 600, letterSpacing: '0.01em', fontSize: '15px', fontStyle: 'italic' as const } },
+  { name: 'AAVE', style: { fontFamily: '"Courier New", monospace', fontWeight: 700, letterSpacing: '0.12em', fontSize: '13px', textTransform: 'uppercase' as const } },
+  { name: 'Compound', style: { fontFamily: 'Palatino, "Book Antiqua", serif', fontWeight: 400, letterSpacing: '-0.01em', fontSize: '16px' } },
+  { name: 'MakerDAO', style: { fontFamily: 'Impact, "Arial Narrow", sans-serif', fontWeight: 400, letterSpacing: '0.04em', fontSize: '14px' } },
+  { name: 'Chainlink', style: { fontFamily: 'Verdana, sans-serif', fontWeight: 700, letterSpacing: '-0.03em', fontSize: '13px' } },
 ]
 
 const backers = [
-  { name: 'Aptos Foundation', style: { fontFamily: 'Times New Roman, serif', fontWeight: 400, letterSpacing: '0.02em', fontSize: '14px' } },
-  { name: 'PANIC', style: { fontFamily: '"Arial Black", sans-serif', fontWeight: 900, letterSpacing: '0.08em', fontSize: '16px' } },
+  { name: 'Fundamental Labs', style: { fontFamily: 'Times New Roman, serif', fontWeight: 400, letterSpacing: '0.02em', fontSize: '14px' } },
+  { name: 'KUCOIN', style: { fontFamily: '"Arial Black", sans-serif', fontWeight: 900, letterSpacing: '0.08em', fontSize: '16px' } },
   { name: 'NGC', style: { fontFamily: 'Impact, sans-serif', fontWeight: 700, letterSpacing: '0.05em', fontSize: '18px' } },
-  { name: 'A16Z', style: { fontFamily: 'Georgia, serif', fontWeight: 600, letterSpacing: '-0.02em', fontSize: '17px' } },
+  { name: 'NxGen', style: { fontFamily: 'Georgia, serif', fontWeight: 600, letterSpacing: '-0.02em', fontSize: '17px' } },
   { name: 'Matter Labs', style: { fontFamily: 'Helvetica, sans-serif', fontWeight: 700, letterSpacing: '-0.01em', fontSize: '15px' } },
-  { name: 'ECHO', style: { fontFamily: 'Verdana, sans-serif', fontWeight: 700, letterSpacing: '0.06em', fontSize: '14px', textTransform: 'uppercase' as const } },
-  { name: 'PARAFI', style: { fontFamily: '"Courier New", monospace', fontWeight: 700, letterSpacing: '0.18em', fontSize: '14px' } },
+  { name: 'DEXTOOLS', style: { fontFamily: 'Verdana, sans-serif', fontWeight: 700, letterSpacing: '0.06em', fontSize: '14px', textTransform: 'uppercase' as const } },
+  { name: 'NGRAVE', style: { fontFamily: '"Courier New", monospace', fontWeight: 700, letterSpacing: '0.18em', fontSize: '14px' } },
   { name: 'Polychain', style: { fontFamily: 'Palatino, serif', fontWeight: 500, letterSpacing: '0.03em', fontSize: '15px' } },
 ]
 
 export default function LandingPage() {
   return (
-    <div className="flex flex-col bg-[#F5F5F5]">
-      {/* Hero Wrapper */}
-      <div className="h-screen flex flex-col overflow-hidden">
+    <div className="flex flex-col bg-[#F5F5F5] font-tt-norms text-black min-h-screen">
+      <div className="h-screen flex flex-col overflow-hidden max-w-[88rem] mx-auto w-full">
         {/* Navbar */}
         <nav className="absolute top-0 left-0 right-0 z-20 px-6 py-5">
           <div className="max-w-[88rem] mx-auto flex items-center justify-between">
@@ -50,24 +49,26 @@ export default function LandingPage() {
               ))}
             </div>
             <Link to="/signup" className="bg-black text-white text-base font-medium px-7 py-2.5 rounded-full hover:bg-gray-800 transition-colors duration-200">
-              Get Started
+              Open Wallet
             </Link>
           </div>
         </nav>
 
         {/* Hero Section */}
         <div className="flex-1 px-6 pt-20 pb-6 flex items-end">
-          <div className="max-w-[88rem] mx-auto w-full relative rounded-2xl overflow-hidden" style={{ height: 'calc(100vh - 96px)' }}>
+          <div className="w-full relative rounded-2xl overflow-hidden" style={{ height: 'calc(100vh - 96px)' }}>
             <video autoPlay muted loop playsInline className="absolute inset-0 w-full h-full object-cover">
               <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260423_161253_c72b1869-400f-45ed-ac0c-52f68c2ed5bd.mp4" type="video/mp4" />
             </video>
+            
             <div className="relative z-10 flex flex-col items-start justify-start h-full p-12 pt-36">
               <h1 className="text-black text-5xl md:text-6xl font-medium leading-tight max-w-xl mb-4" style={{ letterSpacing: '-0.04em' }}>
                 Your Messages<br />Stay Yours
               </h1>
               <p className="text-black/70 text-base md:text-lg max-w-md mb-8 leading-relaxed" style={{ fontFamily: "'Inter', ui-sans-serif, system-ui, sans-serif" }}>
-                A decentralized, E2E-encrypted messaging platform built for native privacy, reward-powered engagement, and effortless blockchain integration.
+                An automated, reward-powered decentralized messaging platform built for native privacy and effortless connection into Web3.
               </p>
+              
               <Link to="/signup" className="inline-flex items-center gap-3 bg-black text-white text-base md:text-lg font-medium pl-8 pr-2 py-2 rounded-full hover:bg-gray-800 transition-colors duration-200">
                 Join us
                 <span className="bg-white rounded-full p-2">
@@ -90,7 +91,7 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* Info Section */}
+      {/* Info Section ("Meet Inbox3.") */}
       <section className="bg-[#F5F5F5] px-6 py-24">
         <div className="max-w-[88rem] mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-16 items-start">
@@ -105,12 +106,13 @@ export default function LandingPage() {
                 </span>
               </Link>
             </div>
-            <p className="text-black/70 text-2xl md:text-3xl leading-relaxed">
-              Inbox3 is a reward-earning messaging platform that lets your conversations stay private while growing your on-chain reputation.
-            </p>
+            <div>
+              <p className="text-black/70 text-2xl md:text-3xl leading-relaxed">
+                Inbox3 is a reward-earning messaging platform that lets your conversations stay private while growing your on-chain reputation.
+              </p>
+            </div>
           </div>
 
-          {/* Card Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="lg:col-span-2 rounded-2xl overflow-hidden" style={{ backgroundImage: 'url(https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260423_164207_f243351d-ed59-48ec-83a0-a5e996bdbe3c.png&w=1280&q=85)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
               <div className="p-7 min-h-80 flex flex-col justify-between">
@@ -123,7 +125,7 @@ export default function LandingPage() {
               </div>
             </div>
             <div className="rounded-2xl p-7 min-h-80 flex flex-col justify-between" style={{ backgroundColor: '#2B2644' }}>
-              <h3 className="text-white text-2xl font-medium leading-snug" style={{ letterSpacing: '-0.02em' }}>
+              <h3 className="text-white text-2xl font-medium leading-snug">
                 Always fluid,<br />always private.
               </h3>
               <p className="text-white/60 text-base">
@@ -131,7 +133,7 @@ export default function LandingPage() {
               </p>
             </div>
             <div className="rounded-2xl p-7 min-h-80 flex flex-col justify-between" style={{ backgroundColor: '#2B2644' }}>
-              <h3 className="text-white text-2xl font-medium leading-snug" style={{ letterSpacing: '-0.02em' }}>
+              <h3 className="text-white text-2xl font-medium leading-snug">
                 Fully<br />automated
               </h3>
               <p className="text-white/60 text-base">
@@ -143,7 +145,7 @@ export default function LandingPage() {
       </section>
 
       {/* Backed By Section */}
-      <section className="bg-[#F5F5F5] px-6 py-16">
+      <section className="bg-[#F5F5F5] px-6">
         <div className="max-w-[88rem] mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 items-center">
           <div className="text-black/70 text-base leading-relaxed">
             Funded by premier partners<br />and forward-thinking leaders.
@@ -169,7 +171,7 @@ export default function LandingPage() {
               Use modes
             </h2>
             <p className="text-black/60 text-base leading-relaxed max-w-sm">
-              Inbox3 powers a wide range of modes for builders, companies and communities wanting safe and rewarding decentralized messaging integrations.
+              Inbox3 powers a wide range of modes for builders, companies and communities wanting safe and rewarding decentralized messaging integrations plus more.
             </p>
           </div>
           <div className="relative rounded-3xl overflow-hidden min-h-[720px]">
@@ -184,7 +186,7 @@ export default function LandingPage() {
                 Lift customer retention by offering Inbox3, a trusted decentralized messaging platform with strong privacy, letting your patrons communicate with zero effort on your platform.
               </p>
               <Link to="/signup" className="inline-flex items-center gap-3 group">
-                <span className="text-black font-medium">Know more</span>
+                <span className="text-black font-medium text-base">Know more</span>
                 <span className="w-9 h-9 rounded-full bg-white/80 backdrop-blur flex items-center justify-center group-hover:bg-white transition-colors">
                   <ArrowRight className="w-4 h-4 text-black" />
                 </span>
@@ -193,72 +195,6 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-
-      {/* Features Grid */}
-      <section className="bg-[#F5F5F5] px-6 py-24">
-        <div className="max-w-[88rem] mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-black text-4xl md:text-5xl font-medium leading-tight mb-4" style={{ letterSpacing: '-0.03em' }}>
-              Built for the future
-            </h2>
-            <p className="text-black/60 text-lg max-w-2xl mx-auto">
-              Every feature designed with privacy, performance, and decentralization at its core.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              { icon: Shield, title: 'E2E Encrypted', desc: 'Only you and your recipient can read messages. Not even we can.' },
-              { icon: Zap, title: 'Reward-Powered', desc: 'Earn on-chain rewards for active, meaningful conversations.' },
-              { icon: Globe, title: 'Decentralized', desc: 'Built on Aptos blockchain. No central point of failure.' },
-              { icon: Lock, title: 'Self-Custody', desc: 'Your keys, your messages. Full control over your data.' },
-              { icon: Users, title: 'Groups & Communities', desc: 'Create decentralized groups with on-chain governance.' },
-              { icon: Globe, title: 'Cross-Platform', desc: 'Access from any device. Your messages follow you everywhere.' },
-            ].map((feature, i) => (
-              <div key={i} className="rounded-2xl p-8 bg-white/50 hover:bg-white transition-colors duration-300">
-                <feature.icon className="w-8 h-8 text-black mb-4" />
-                <h3 className="text-black text-xl font-medium mb-2" style={{ letterSpacing: '-0.02em' }}>{feature.title}</h3>
-                <p className="text-black/60 text-base leading-relaxed">{feature.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="bg-[#F5F5F5] px-6 py-24">
-        <div className="max-w-[88rem] mx-auto">
-          <div className="rounded-3xl bg-black p-12 md:p-20 text-center">
-            <h2 className="text-white text-4xl md:text-6xl font-medium leading-tight mb-6" style={{ letterSpacing: '-0.03em' }}>
-              Ready to take back<br />your privacy?
-            </h2>
-            <p className="text-white/60 text-lg max-w-xl mx-auto mb-10">
-              Join thousands who've already switched to decentralized, encrypted messaging.
-            </p>
-            <Link to="/signup" className="inline-flex items-center gap-3 bg-white text-black text-lg font-medium pl-8 pr-2 py-2 rounded-full hover:bg-white/90 transition-colors duration-200">
-              Get started free
-              <span className="bg-black rounded-full p-2">
-                <ArrowRight className="w-5 h-5 text-white" />
-              </span>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-[#F5F5F5] px-6 py-12 border-t border-black/10">
-        <div className="max-w-[88rem] mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-2">
-            <LogoIcon className="text-black" />
-            <span className="text-lg font-medium tracking-tight text-black">Inbox3</span>
-          </div>
-          <div className="flex items-center gap-8">
-            {['Privacy', 'Terms', 'Docs', 'GitHub'].map((item) => (
-              <a key={item} href="#" className="text-sm text-black/60 hover:text-black transition-colors duration-200">{item}</a>
-            ))}
-          </div>
-          <p className="text-sm text-black/40">© 2026 Inbox3. All rights reserved.</p>
-        </div>
-      </footer>
     </div>
   )
 }
