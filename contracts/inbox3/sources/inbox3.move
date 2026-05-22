@@ -196,78 +196,68 @@ module inbox3_addr::inbox3 {
         vector::remove(&mut store.timestamps, index);
     }
 
-    #[test]
-    fun test_initialize_and_send() {
-        use aptos_framework::account;
+    #[test(sender = @0x111, recipient = @0x222, framework = @aptos_framework)]
+    fun test_initialize_and_send(sender: &signer, recipient: &signer, framework: &signer) {
+        aptos_framework::timestamp::set_time_has_started_for_testing(framework);
+        let recipient_addr = signer::address_of(recipient);
 
-        let (sender, sender_addr) = account::create_account_for_test(100000000);
-        let (recipient, recipient_addr) = account::create_account_for_test(100000000);
-
-        initialize_inbox(&recipient, b"test_public_key");
+        initialize_inbox(recipient, b"test_public_key");
         assert!(get_message_count(recipient_addr) == 0, 1);
         assert!(is_inbox_initialized(recipient_addr), 2);
 
-        send_message(&sender, recipient_addr, b"encrypted_message");
+        send_message(sender, recipient_addr, b"encrypted_message");
         assert!(get_message_count(recipient_addr) == 1, 3);
     }
 
-    #[test]
-    fun test_send_to_uninitialized_creates_escrow() {
-        use aptos_framework::account;
-
-        let (sender, _) = account::create_account_for_test(100000000);
-        let (_, recipient_addr) = account::create_account_for_test(100000000);
+    #[test(sender = @0x111, recipient = @0x222, framework = @aptos_framework)]
+    fun test_send_to_uninitialized_creates_escrow(sender: &signer, recipient: &signer, framework: &signer) {
+        aptos_framework::timestamp::set_time_has_started_for_testing(framework);
+        let recipient_addr = signer::address_of(recipient);
 
         assert!(!is_inbox_initialized(recipient_addr), 1);
-        send_message(&sender, recipient_addr, b"escrow_message");
+        send_message(sender, recipient_addr, b"escrow_message");
         assert!(has_escrow(recipient_addr), 2);
         assert!(get_escrow_count(recipient_addr) == 1, 3);
     }
 
-    #[test]
-    fun test_claim_escrow() {
-        use aptos_framework::account;
+    #[test(sender = @0x111, recipient = @0x222, framework = @aptos_framework)]
+    fun test_claim_escrow(sender: &signer, recipient: &signer, framework: &signer) {
+        aptos_framework::timestamp::set_time_has_started_for_testing(framework);
+        let recipient_addr = signer::address_of(recipient);
 
-        let (sender, _) = account::create_account_for_test(100000000);
-        let (recipient, recipient_addr) = account::create_account_for_test(100000000);
-
-        send_message(&sender, recipient_addr, b"escrow_msg_1");
-        send_message(&sender, recipient_addr, b"escrow_msg_2");
+        send_message(sender, recipient_addr, b"escrow_msg_1");
+        send_message(sender, recipient_addr, b"escrow_msg_2");
 
         assert!(has_escrow(recipient_addr), 1);
         assert!(get_escrow_count(recipient_addr) == 2, 2);
 
-        initialize_inbox(&recipient, b"recipient_pub_key");
-        claim_escrow_messages(&recipient, b"recipient_pub_key");
+        initialize_inbox(recipient, b"recipient_pub_key");
+        claim_escrow_messages(recipient, b"recipient_pub_key");
 
         assert!(!has_escrow(recipient_addr), 3);
         assert!(get_message_count(recipient_addr) == 2, 4);
     }
 
-    #[test]
-    fun test_delete_message() {
-        use aptos_framework::account;
+    #[test(sender = @0x111, recipient = @0x222, framework = @aptos_framework)]
+    fun test_delete_message(sender: &signer, recipient: &signer, framework: &signer) acquires MessageStore {
+        aptos_framework::timestamp::set_time_has_started_for_testing(framework);
+        let recipient_addr = signer::address_of(recipient);
 
-        let (sender, sender_addr) = account::create_account_for_test(100000000);
-        let (recipient, recipient_addr) = account::create_account_for_test(100000000);
+        initialize_inbox(recipient, b"pub_key");
+        send_message(sender, recipient_addr, b"msg1");
+        send_message(sender, recipient_addr, b"msg2");
 
-        initialize_inbox(&recipient, b"pub_key");
-        send_message(&sender, recipient_addr, b"msg1");
-        send_message(&sender, recipient_addr, b"msg2");
-
-        delete_message(&recipient, 0);
+        delete_message(recipient, 0);
         assert!(get_message_count(recipient_addr) == 2, 1);
     }
 
-    #[test]
-    fun test_get_public_key() {
-        use aptos_framework::account;
+    #[test(recipient = @0x222, framework = @aptos_framework)]
+    fun test_get_public_key(recipient: &signer, framework: &signer) acquires Inbox {
+        aptos_framework::timestamp::set_time_has_started_for_testing(framework);
+        let recipient_addr = signer::address_of(recipient);
 
-        let (_, recipient_addr) = account::create_account_for_test(100000000);
-        let (recipient, _) = account::create_account_for_test(100000000);
-
-        initialize_inbox(&recipient, b"my_public_key_data");
+        initialize_inbox(recipient, b"my_public_key_data");
         let pub_key = get_public_key(recipient_addr);
-        assert!(vector::length(pub_key) == 17, 1);
+        assert!(vector::length(pub_key) == 18, 1);
     }
 }
