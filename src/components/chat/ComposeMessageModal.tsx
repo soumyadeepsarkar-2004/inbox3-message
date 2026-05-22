@@ -4,7 +4,7 @@ import { X, Send, ArrowRight } from 'lucide-react'
 interface ComposeMessageModalProps {
   open: boolean
   onClose: () => void
-  onSend: (address: string, name: string, message: string) => void
+  onSend: (address: string, name: string, message: string, publicKey?: string) => void
 }
 
 export default function ComposeMessageModal({ open, onClose, onSend }: ComposeMessageModalProps) {
@@ -36,7 +36,8 @@ export default function ComposeMessageModal({ open, onClose, onSend }: ComposeMe
       return
     }
 
-    onSend(address.trim(), name.trim() || address.trim().slice(0, 8), message.trim())
+    const senderKey = localStorage.getItem('inbox3_public_key') || undefined
+    onSend(address.trim(), name.trim() || address.trim().slice(0, 8), message.trim(), senderKey)
     setAddress('')
     setName('')
     setMessage('')
@@ -62,7 +63,7 @@ export default function ComposeMessageModal({ open, onClose, onSend }: ComposeMe
               placeholder="0x1a2b...3c4d"
               value={address}
               onChange={e => setAddress(e.target.value)}
-              className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl h-10 px-4 text-sm text-white placeholder:text-slate-600 focus:ring-1 focus:ring-[#FF5A00]/30 focus:border-[#FF5A00]/40 focus:outline-none transition-all font-mono"
+              className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl h-10 px-4 text-sm text-white placeholder:text-slate-600 focus:ring-1 focus:ring-white/10 focus:outline-none transition-all font-mono"
             />
           </div>
 
@@ -73,7 +74,7 @@ export default function ComposeMessageModal({ open, onClose, onSend }: ComposeMe
               placeholder="Alice"
               value={name}
               onChange={e => setName(e.target.value)}
-              className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl h-10 px-4 text-sm text-white placeholder:text-slate-600 focus:ring-1 focus:ring-[#FF5A00]/30 focus:border-[#FF5A00]/40 focus:outline-none transition-all"
+              className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl h-10 px-4 text-sm text-white placeholder:text-slate-600 focus:ring-1 focus:ring-white/10 focus:outline-none transition-all"
             />
           </div>
 
@@ -84,7 +85,7 @@ export default function ComposeMessageModal({ open, onClose, onSend }: ComposeMe
               value={message}
               onChange={e => setMessage(e.target.value)}
               rows={4}
-              className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 text-sm text-white placeholder:text-slate-600 focus:ring-1 focus:ring-[#FF5A00]/30 focus:border-[#FF5A00]/40 focus:outline-none transition-all resize-none"
+              className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 text-sm text-white placeholder:text-slate-600 focus:ring-1 focus:ring-white/10 focus:outline-none transition-all resize-none"
             />
           </div>
 
@@ -94,7 +95,7 @@ export default function ComposeMessageModal({ open, onClose, onSend }: ComposeMe
 
           <button
             type="submit"
-            className="w-full h-11 bg-gradient-to-r from-[#FF5A00] to-[#FF7A00] text-black font-semibold rounded-xl hover:opacity-90 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 text-sm"
+            className="w-full h-11 bg-gradient-to-r from-[#A855F7] to-[#FF6B35] text-white font-semibold rounded-xl hover:opacity-90 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 text-sm"
           >
             <Send className="w-3.5 h-3.5" />
             Send Encrypted Message

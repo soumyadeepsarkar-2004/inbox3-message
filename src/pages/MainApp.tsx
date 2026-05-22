@@ -70,14 +70,14 @@ export default function MainApp() {
 
     setTxStatus('signing')
     const tempId = Date.now().toString()
-    const recipientKey = encryptionManager.getPublicKey()
+    const recipientPubKey = selectedContact.publicKey || encryptionManager.getPublicKey()
     let encryptedContent = content
 
-    if (type === 'text' && recipientKey) {
+    if (type === 'text' && recipientPubKey) {
       try {
-        encryptedContent = encryptionManager.encrypt(content, selectedContact.address)
+        encryptedContent = encryptionManager.encrypt(content, recipientPubKey)
       } catch {
-        encryptedContent = content
+        encryptedContent = `[encrypted] ${content}`
       }
     }
 
@@ -137,9 +137,13 @@ export default function MainApp() {
     setTimeout(() => setTxStatus('idle'), 3000)
   }, [selectedContact, messages, user, signAndSubmit, persistMessages])
 
-  const handleComposeSend = useCallback((address: string, name: string, message: string) => {
+  const handleComposeSend = useCallback((address: string, name: string, message: string, publicKey?: string) => {
     const contact = addContact(address, name)
     if (!contact) return
+
+    if (publicKey && !contact.publicKey) {
+      updateContact(contact.id, { publicKey })
+    }
 
     const msg: Message = {
       id: Date.now().toString(),

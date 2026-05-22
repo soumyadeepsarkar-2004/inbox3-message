@@ -14,12 +14,13 @@ describe('LandingPage', () => {
     expect(screen.getAllByText(/Stay Yours/i).length).toBeGreaterThan(0)
   })
 
-  it('renders the Get Started button', () => {
+  it('renders the primary CTA buttons', () => {
     render(
       <MemoryRouter>
         <LandingPage />
       </MemoryRouter>
     )
-    expect(screen.getAllByText(/Get Started/i).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Join us/i).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Open Wallet/i).length).toBeGreaterThan(0)
   })
 })

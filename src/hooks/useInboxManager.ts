@@ -67,7 +67,7 @@ export function useInboxManager() {
               functionArguments: [address],
             },
           })
-          publicKey = Buffer.from(pubKeyResult as number[]).toString('hex')
+          publicKey = Array.from(pubKeyResult as number[]).map(b => b.toString(16).padStart(2, '0')).join('')
         } catch {
           // Public key not available
         }

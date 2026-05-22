@@ -46,6 +46,6 @@ describe('ComposeMessageModal', () => {
     fireEvent.change(screen.getByPlaceholderText('Alice'), { target: { value: 'Alice' } })
     fireEvent.change(screen.getByPlaceholderText('Type your encrypted message...'), { target: { value: 'Hello!' } })
     fireEvent.click(screen.getByText('Send Encrypted Message'))
-    expect(onSend).toHaveBeenCalledWith('0x1234567890abcdef', 'Alice', 'Hello!')
+    expect(onSend).toHaveBeenCalledWith('0x1234567890abcdef', 'Alice', 'Hello!', undefined)
   })
 })

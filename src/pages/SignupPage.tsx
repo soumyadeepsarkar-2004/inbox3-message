@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Eye, EyeOff } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Eye, EyeOff, Loader2 } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 
 function StepItem({ number, text, active }: { number: number; text: string; active?: boolean }) {
   return (
@@ -24,9 +25,9 @@ function StepItem({ number, text, active }: { number: number; text: string; acti
   )
 }
 
-function SocialButton({ icon, label }: { icon: React.ReactNode; label: string }) {
+function SocialButton({ icon, label, onClick, disabled }: { icon: React.ReactNode; label: string; onClick?: () => void; disabled?: boolean }) {
   return (
-    <button className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-black border border-white/10 hover:bg-white/5 transition-all duration-200">
+    <button onClick={onClick} disabled={disabled} className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-black border border-white/10 hover:bg-white/5 transition-all duration-200 disabled:opacity-50">
       {icon}
       <span className="text-sm font-medium text-white">{label}</span>
     </button>
@@ -34,13 +35,14 @@ function SocialButton({ icon, label }: { icon: React.ReactNode; label: string })
 }
 
 function InputGroup({
-  label,
-  placeholder,
-  type,
+  label, placeholder, type, value, onChange, error
 }: {
   label: string
   placeholder: string
   type: string
+  value: string
+  onChange: (v: string) => void
+  error?: string
 }) {
   return (
     <div className="space-y-2">
@@ -48,14 +50,52 @@ function InputGroup({
       <input
         type={type}
         placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
         className="w-full bg-brand-gray border-none rounded-xl h-11 px-4 text-white placeholder:text-white/20 focus:ring-2 focus:ring-white/20 focus:outline-none transition-all duration-200"
       />
+      {error && <p className="text-xs text-red-400 mt-0.5">{error}</p>}
     </div>
   )
 }
 
 export default function SignupPage() {
+  const navigate = useNavigate()
+  const { signupWithEmail, connectWithGoogle, connectWithGithub, loading } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [errors, setErrors] = useState<Record<string, string>>({})
+
+  const validate = () => {
+    const errs: Record<string, string> = {}
+    if (!firstName.trim()) errs.firstName = 'First name is required'
+    if (!lastName.trim()) errs.lastName = 'Last name is required'
+    if (!email.trim()) errs.email = 'Email is required'
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = 'Invalid email format'
+    if (!password) errs.password = 'Password is required'
+    else if (password.length < 8) errs.password = 'At least 8 characters required'
+    setErrors(errs)
+    return Object.keys(errs).length === 0
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!validate()) return
+    await signupWithEmail(email, password, `${firstName} ${lastName}`)
+    navigate('/profile')
+  }
+
+  const handleGoogle = async () => {
+    await connectWithGoogle()
+    navigate('/profile')
+  }
+
+  const handleGithub = async () => {
+    await connectWithGithub()
+  }
 
   return (
     <main className="flex min-h-screen w-full bg-black selection:bg-white/30 p-2 transition-all duration-500 lg:h-screen lg:overflow-hidden lg:p-4">
@@ -122,8 +162,8 @@ export default function SignupPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <SocialButton icon={<span className="w-4 h-4 flex items-center justify-center font-bold text-xs border border-white/20 rounded bg-white/5 text-white">G</span>} label="Google" />
-            <SocialButton icon={<span className="w-4 h-4 flex items-center justify-center font-bold text-xs border border-white/20 rounded bg-white/5 text-white">GH</span>} label="Github" />
+            <SocialButton icon={<span className="w-4 h-4 flex items-center justify-center font-bold text-xs border border-white/20 rounded bg-white/5 text-white">G</span>} label="Google" onClick={handleGoogle} disabled={loading} />
+            <SocialButton icon={<span className="w-4 h-4 flex items-center justify-center font-bold text-xs border border-white/20 rounded bg-white/5 text-white">GH</span>} label="Github" onClick={handleGithub} disabled={loading} />
           </div>
 
           <div className="relative flex items-center">
@@ -132,12 +172,12 @@ export default function SignupPage() {
             <div className="flex-1 h-px bg-white/10" />
           </div>
 
-          <div className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <InputGroup label="First Name" placeholder="First name" type="text" />
-              <InputGroup label="Last Name" placeholder="Last name" type="text" />
+              <InputGroup label="First Name" placeholder="First name" type="text" value={firstName} onChange={setFirstName} error={errors.firstName} />
+              <InputGroup label="Last Name" placeholder="Last name" type="text" value={lastName} onChange={setLastName} error={errors.lastName} />
             </div>
-            <InputGroup label="Email" placeholder="Email" type="email" />
+            <InputGroup label="Email" placeholder="Email" type="email" value={email} onChange={setEmail} error={errors.email} />
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-white">Password</label>
@@ -145,6 +185,8 @@ export default function SignupPage() {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="w-full bg-brand-gray border-none rounded-xl h-11 px-4 pr-11 text-white placeholder:text-white/20 focus:ring-2 focus:ring-white/20 focus:outline-none transition-all duration-200"
                 />
                 <button
@@ -155,16 +197,18 @@ export default function SignupPage() {
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-              <p className="text-xs text-white/30 mt-1">Requires at least 8 symbols.</p>
+              {errors.password && <p className="text-xs text-red-400 mt-0.5">{errors.password}</p>}
+              {!errors.password && <p className="text-xs text-white/30 mt-1">Requires at least 8 symbols.</p>}
             </div>
 
             <button
               type="submit"
-              className="w-full h-14 bg-white text-black font-semibold rounded-xl hover:bg-white/90 active:scale-[0.98] transition-all duration-200 mt-4"
+              disabled={loading}
+              className="w-full h-14 bg-white text-black font-semibold rounded-xl hover:bg-white/90 active:scale-[0.98] transition-all duration-200 mt-4 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Create Account
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Create Account'}
             </button>
-          </div>
+          </form>
 
           <p className="text-center text-sm text-white/40">
             Member of the team?{' '}

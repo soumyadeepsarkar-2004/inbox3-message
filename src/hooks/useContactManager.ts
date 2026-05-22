@@ -10,6 +10,7 @@ export interface Contact {
   unread: number
   online: boolean
   addedAt: number
+  publicKey?: string
 }
 
 const STORAGE_KEY = 'inbox3_contacts'
