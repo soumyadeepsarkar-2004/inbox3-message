@@ -80,12 +80,8 @@ export default function SignupPage() {
             transition={{ duration: 0.5 }}
             className="flex items-center gap-2"
           >
-            <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center">
-              <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4 text-black">
-                <circle cx="12" cy="12" r="10" fill="currentColor" />
-              </svg>
-            </div>
-            <span className="text-xl font-semibold tracking-tight text-white">Aurora</span>
+            <div className="w-6 h-6 rounded bg-gradient-to-br from-[#A855F7] to-[#FF6B35] flex items-center justify-center text-xs font-bold text-black">i3</div>
+            <span className="text-xl font-semibold tracking-tight text-white">Inbox3</span>
           </motion.div>
 
           <motion.div
@@ -93,7 +89,7 @@ export default function SignupPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="text-4xl font-medium tracking-tight whitespace-nowrap text-white">Join Aurora</h2>
+            <h2 className="text-4xl font-medium tracking-tight whitespace-nowrap text-white">Join Inbox3</h2>
             <p className="text-white/60 text-sm leading-relaxed px-4 mt-2">
               Follow these 3 quick phases to activate your space.
             </p>

@@ -42,7 +42,7 @@ export default function LoginPage() {
             transition={{ duration: 0.5 }}
             className="flex items-center gap-2"
           >
-            <div className="w-6 h-6 rounded bg-gradient-to-br from-[#FF5A00] to-[#FF7A00] flex items-center justify-center text-xs font-bold text-black">i3</div>
+            <div className="w-6 h-6 rounded bg-gradient-to-br from-[#A855F7] to-[#FF6B35] flex items-center justify-center text-xs font-bold text-black">i3</div>
             <span className="text-xl font-semibold tracking-tight text-white">Inbox3</span>
           </motion.div>
 

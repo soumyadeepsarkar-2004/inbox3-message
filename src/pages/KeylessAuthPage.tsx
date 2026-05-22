@@ -58,7 +58,7 @@ export default function KeylessAuthPage() {
             transition={{ duration: 0.5 }}
             className="flex items-center gap-2"
           >
-            <div className="w-6 h-6 rounded bg-gradient-to-br from-[#FF5A00] to-[#FF7A00] flex items-center justify-center text-xs font-bold text-black">i3</div>
+            <div className="w-6 h-6 rounded bg-gradient-to-br from-[#A855F7] to-[#FF6B35] flex items-center justify-center text-xs font-bold text-black">i3</div>
             <span className="text-xl font-semibold tracking-tight text-white">Inbox3</span>
           </motion.div>
 
@@ -156,8 +156,8 @@ export default function KeylessAuthPage() {
             className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl bg-black border border-white/10 hover:bg-white/5 transition-all duration-200 group disabled:opacity-50"
           >
             <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-[#FF5A00]/20 to-[#FF7A00]/20 border border-white/10 flex items-center justify-center">
-                <Shield className="h-4 w-4 text-[#FF5A00]" />
+              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-[#A855F7]/20 to-[#FF6B35]/20 border border-white/10 flex items-center justify-center">
+                <Shield className="h-4 w-4 text-[#FF6B35]" />
               </div>
               <div className="text-left">
                 <span className="text-sm font-medium text-white">Create Passkey</span>
