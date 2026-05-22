@@ -31,54 +31,68 @@ export default function ProfilePage() {
   const displayName = user?.name || user?.email?.split('@')[0] || 'User'
 
   return (
-    <main className="min-h-screen bg-black text-white selection:bg-white/30 p-4 lg:p-8">
-      <div className="max-w-2xl mx-auto">
-        {/* Header */}
+    <main className="flex min-h-screen w-full bg-black selection:bg-white/30 p-2 transition-all duration-500 lg:h-screen lg:overflow-hidden lg:p-4">
+      {/* Left Column */}
+      <div className="hidden lg:flex w-[52%] relative flex-col items-center justify-end pb-32 px-12 rounded-3xl overflow-hidden shadow-2xl h-full">
+        <video autoPlay muted loop playsInline className="absolute inset-0 w-full h-full object-cover">
+          <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260506_081238_406ed0e3-5d83-436e-a512-0bbff7ec5b95.mp4" type="video/mp4" />
+        </video>
+
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between mb-12"
+          className="z-10 w-full max-w-xs space-y-8"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ staggerChildren: 0.15, delayChildren: 0.2 }}
         >
-          <div className="flex items-center gap-2">
-            <Circle className="fill-white text-white w-5 h-5" />
-            <span className="text-lg font-semibold tracking-tight">Inbox3</span>
-          </div>
-          <div className="flex items-center gap-2 text-white/40 text-sm">
-            <span>Step 3 of 3</span>
-            <div className="w-16 h-1 bg-white/10 rounded-full overflow-hidden">
-              <div className="w-full h-full bg-gradient-brand rounded-full" />
-            </div>
-          </div>
+          <motion.div className="flex items-center gap-2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+            <Circle className="fill-white text-white w-6 h-6" />
+            <span className="text-xl font-semibold tracking-tight">Inbox3</span>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+            <h2 className="text-4xl font-medium tracking-tight whitespace-nowrap">Almost There</h2>
+            <p className="text-white/60 text-sm leading-relaxed px-4 mt-2">
+              Follow these 3 quick phases to activate your space.
+            </p>
+          </motion.div>
+
+          <motion.div className="space-y-3" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+            <StepItem number={1} text="Register your identity" />
+            <StepItem number={2} text="Configure your studio" />
+            <StepItem number={3} text="Finalize your profile" active />
+          </motion.div>
         </motion.div>
+      </div>
 
-        {/* Main Form */}
+      {/* Right Column */}
+      <div className="flex-1 flex flex-col items-center justify-center py-12 lg:py-6 px-4 sm:px-12 lg:px-16 xl:px-24 overflow-y-auto lg:overflow-hidden">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="space-y-8"
+          className="w-full max-w-xl space-y-8 lg:space-y-6 sm:space-y-10"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, ease: 'easeOut' }}
         >
-          <div className="text-center space-y-2">
+          <div className="text-left space-y-1">
             <h1 className="text-3xl font-medium tracking-tight">Finalize Your Profile</h1>
-            <p className="text-white/50">Complete your identity to start messaging</p>
+            <p className="text-white/40 text-sm mt-1">Complete your identity to start messaging</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6 w-full relative">
             {/* Avatar Upload */}
-            <div className="flex flex-col items-center space-y-4">
+            <div className="flex flex-col items-start space-y-4">
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="relative w-32 h-32 rounded-full bg-brand-gray flex items-center justify-center cursor-pointer overflow-hidden group"
+                className="relative w-24 h-24 rounded-full bg-white/5 border border-white/10 flex items-center justify-center cursor-pointer overflow-hidden group"
                 onClick={() => fileInputRef.current?.click()}
               >
                 {avatar ? (
                   <img src={avatar} alt="Avatar" className="w-full h-full object-cover" />
                 ) : (
-                  <User className="w-12 h-12 text-white/30" />
+                  <User className="w-10 h-10 text-white/30" />
                 )}
                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <Camera className="w-6 h-6 text-white" />
+                  <Camera className="w-5 h-5 text-white" />
                 </div>
               </motion.div>
               <input
@@ -99,27 +113,27 @@ export default function ProfilePage() {
             </div>
 
             {/* Name Input */}
-            <div className="space-y-2">
+            <div className="space-y-2 w-full">
               <label className="text-sm font-medium text-white">Display Name</label>
               <input
                 type="text"
                 placeholder={displayName}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full bg-brand-gray border-none rounded-xl h-12 px-4 text-white placeholder:text-white/30 focus:ring-2 focus:ring-white/20 focus:outline-none transition-all duration-200"
+                className="w-full bg-[#1A1A1A] border-none rounded-xl h-12 px-4 text-white placeholder:text-white/30 focus:ring-2 focus:ring-white/20 focus:outline-none transition-all duration-200"
                 required
               />
             </div>
 
             {/* Bio Input */}
-            <div className="space-y-2">
+            <div className="space-y-2 w-full">
               <label className="text-sm font-medium text-white">Bio <span className="text-white/30">(optional)</span></label>
               <textarea
                 placeholder="Tell others about yourself..."
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
                 rows={3}
-                className="w-full bg-brand-gray border-none rounded-xl p-4 text-white placeholder:text-white/30 focus:ring-2 focus:ring-white/20 focus:outline-none transition-all duration-200 resize-none"
+                className="w-full bg-[#1A1A1A] border-none rounded-xl p-4 text-white placeholder:text-white/30 focus:ring-2 focus:ring-white/20 focus:outline-none transition-all duration-200 resize-none"
               />
               <p className="text-xs text-white/30">{bio.length}/160 characters</p>
             </div>
@@ -128,7 +142,7 @@ export default function ProfilePage() {
             <button
               type="submit"
               disabled={loading || !name}
-              className="w-full h-14 bg-white text-black font-semibold rounded-xl hover:bg-white/90 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full h-14 bg-white text-black font-semibold rounded-xl hover:bg-white/90 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-4"
             >
               {loading ? (
                 <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
@@ -152,5 +166,16 @@ export default function ProfilePage() {
         </motion.div>
       </div>
     </main>
+  )
+}
+
+function StepItem({ number, text, active }: { number: number; text: string; active?: boolean }) {
+  return (
+    <div className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 ${active ? 'bg-white text-black border border-white' : 'bg-brand-gray text-white border-none'}`}>
+      <span className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-medium ${active ? 'bg-black text-white' : 'bg-white/10 text-white/40'}`}>
+        {number}
+      </span>
+      <span className="text-sm font-medium">{text}</span>
+    </div>
   )
 }

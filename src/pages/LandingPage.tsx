@@ -10,24 +10,24 @@ function LogoIcon({ className }: { className?: string }) {
 }
 
 const brands = [
-  { name: 'Stripe', style: { fontFamily: 'Georgia, serif', fontWeight: 700, letterSpacing: '-0.02em', fontSize: '15px' } },
-  { name: 'COINBASE', style: { fontFamily: 'Arial, sans-serif', fontWeight: 900, letterSpacing: '0.08em', fontSize: '13px', textTransform: 'uppercase' as const } },
-  { name: 'Uniswap', style: { fontFamily: '"Trebuchet MS", sans-serif', fontWeight: 600, letterSpacing: '0.01em', fontSize: '15px', fontStyle: 'italic' as const } },
-  { name: 'AAVE', style: { fontFamily: '"Courier New", monospace', fontWeight: 700, letterSpacing: '0.12em', fontSize: '13px', textTransform: 'uppercase' as const } },
-  { name: 'Compound', style: { fontFamily: 'Palatino, "Book Antiqua", serif', fontWeight: 400, letterSpacing: '-0.01em', fontSize: '16px' } },
-  { name: 'MakerDAO', style: { fontFamily: 'Impact, "Arial Narrow", sans-serif', fontWeight: 400, letterSpacing: '0.04em', fontSize: '14px' } },
-  { name: 'Chainlink', style: { fontFamily: 'Verdana, sans-serif', fontWeight: 700, letterSpacing: '-0.03em', fontSize: '13px' } },
+  { name: 'Aptos', style: { fontFamily: 'Inter, sans-serif', fontWeight: 800, letterSpacing: '-0.02em', fontSize: '15px' } },
+  { name: 'REACT', style: { fontFamily: 'Arial, sans-serif', fontWeight: 900, letterSpacing: '0.08em', fontSize: '13px', textTransform: 'uppercase' as const } },
+  { name: 'Tailwind CSS', style: { fontFamily: '"Trebuchet MS", sans-serif', fontWeight: 600, letterSpacing: '0.01em', fontSize: '15px', fontStyle: 'italic' as const } },
+  { name: 'TYPESCRIPT', style: { fontFamily: '"Courier New", monospace', fontWeight: 700, letterSpacing: '0.12em', fontSize: '13px', textTransform: 'uppercase' as const } },
+  { name: 'Vite', style: { fontFamily: 'Palatino, "Book Antiqua", serif', fontWeight: 600, letterSpacing: '-0.01em', fontSize: '16px' } },
+  { name: 'Node.js', style: { fontFamily: 'Impact, "Arial Narrow", sans-serif', fontWeight: 400, letterSpacing: '0.04em', fontSize: '14px' } },
+  { name: 'Vercel', style: { fontFamily: 'Verdana, sans-serif', fontWeight: 700, letterSpacing: '-0.03em', fontSize: '13px' } },
 ]
 
 const backers = [
-  { name: 'Fundamental Labs', style: { fontFamily: 'Times New Roman, serif', fontWeight: 400, letterSpacing: '0.02em', fontSize: '14px' } },
-  { name: 'KUCOIN', style: { fontFamily: '"Arial Black", sans-serif', fontWeight: 900, letterSpacing: '0.08em', fontSize: '16px' } },
-  { name: 'NGC', style: { fontFamily: 'Impact, sans-serif', fontWeight: 700, letterSpacing: '0.05em', fontSize: '18px' } },
-  { name: 'NxGen', style: { fontFamily: 'Georgia, serif', fontWeight: 600, letterSpacing: '-0.02em', fontSize: '17px' } },
-  { name: 'Matter Labs', style: { fontFamily: 'Helvetica, sans-serif', fontWeight: 700, letterSpacing: '-0.01em', fontSize: '15px' } },
-  { name: 'DEXTOOLS', style: { fontFamily: 'Verdana, sans-serif', fontWeight: 700, letterSpacing: '0.06em', fontSize: '14px', textTransform: 'uppercase' as const } },
-  { name: 'NGRAVE', style: { fontFamily: '"Courier New", monospace', fontWeight: 700, letterSpacing: '0.18em', fontSize: '14px' } },
-  { name: 'Polychain', style: { fontFamily: 'Palatino, serif', fontWeight: 500, letterSpacing: '0.03em', fontSize: '15px' } },
+  { name: 'Move Language', style: { fontFamily: 'Times New Roman, serif', fontWeight: 400, letterSpacing: '0.02em', fontSize: '15px' } },
+  { name: 'GITHUB', style: { fontFamily: '"Arial Black", sans-serif', fontWeight: 900, letterSpacing: '0.08em', fontSize: '16px' } },
+  { name: 'Google Cloud', style: { fontFamily: 'Impact, sans-serif', fontWeight: 700, letterSpacing: '0.05em', fontSize: '18px' } },
+  { name: 'OpenZeppelin', style: { fontFamily: 'Georgia, serif', fontWeight: 600, letterSpacing: '-0.02em', fontSize: '16px' } },
+  { name: 'Supabase', style: { fontFamily: 'Helvetica, sans-serif', fontWeight: 700, letterSpacing: '-0.01em', fontSize: '15px' } },
+  { name: 'Figma', style: { fontFamily: 'Verdana, sans-serif', fontWeight: 700, letterSpacing: '0.06em', fontSize: '14px', textTransform: 'uppercase' as const } },
+  { name: 'Lucide', style: { fontFamily: '"Courier New", monospace', fontWeight: 700, letterSpacing: '0.18em', fontSize: '14px' } },
+  { name: 'Radix UI', style: { fontFamily: 'Palatino, serif', fontWeight: 500, letterSpacing: '0.03em', fontSize: '15px' } },
 ]
 
 export default function LandingPage() {
@@ -42,7 +42,29 @@ export default function LandingPage() {
               <span className="text-2xl font-medium tracking-tight text-black">Inbox3</span>
             </div>
             <div className="hidden md:flex items-center gap-8">
-              {['Network', 'Ecosystem', 'Rewards', 'Help', 'News'].map((item) => (
+              <div className="relative group">
+                <button className="text-base text-gray-700 hover:text-black font-medium transition-colors duration-200 flex items-center gap-1">
+                  Network
+                  <svg className="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                </button>
+                <div className="absolute top-full left-0 mt-4 w-48 bg-white rounded-2xl shadow-xl border border-black/5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0 p-2">
+                  <a href="#" className="block px-4 py-2.5 text-sm text-gray-700 hover:text-black hover:bg-gray-50 rounded-xl transition-colors">Mainnet</a>
+                  <a href="#" className="block px-4 py-2.5 text-sm text-gray-700 hover:text-black hover:bg-gray-50 rounded-xl transition-colors">Testnet</a>
+                  <a href="#" className="block px-4 py-2.5 text-sm text-gray-700 hover:text-black hover:bg-gray-50 rounded-xl transition-colors">Node Operators</a>
+                </div>
+              </div>
+              <div className="relative group">
+                <button className="text-base text-gray-700 hover:text-black font-medium transition-colors duration-200 flex items-center gap-1">
+                  Ecosystem
+                  <svg className="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                </button>
+                <div className="absolute top-full left-0 mt-4 w-48 bg-white rounded-2xl shadow-xl border border-black/5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0 p-2">
+                  <a href="#" className="block px-4 py-2.5 text-sm text-gray-700 hover:text-black hover:bg-gray-50 rounded-xl transition-colors">Wallets</a>
+                  <a href="#" className="block px-4 py-2.5 text-sm text-gray-700 hover:text-black hover:bg-gray-50 rounded-xl transition-colors">DApps</a>
+                  <a href="#" className="block px-4 py-2.5 text-sm text-gray-700 hover:text-black hover:bg-gray-50 rounded-xl transition-colors">Explorers</a>
+                </div>
+              </div>
+              {['Rewards', 'Help', 'News'].map((item) => (
                 <a key={item} href="#" className="text-base text-gray-700 hover:text-black font-medium transition-colors duration-200">
                   {item}
                 </a>
@@ -195,6 +217,56 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* Footer */}
+      <footer className="bg-[#F5F5F5] px-6 py-16 border-t border-black/5">
+        <div className="max-w-[88rem] mx-auto grid grid-cols-1 md:grid-cols-5 gap-12">
+          <div className="md:col-span-2">
+            <div className="flex items-center gap-2 mb-6">
+              <LogoIcon className="text-black" />
+              <span className="text-2xl font-medium tracking-tight text-black">Inbox3</span>
+            </div>
+            <p className="text-black/60 text-base max-w-sm">
+              The premier decentralized messaging protocol for the next generation of Web3 communication.
+            </p>
+          </div>
+          <div>
+            <h4 className="text-black font-semibold mb-4">Protocol</h4>
+            <ul className="space-y-3">
+              <li><a href="#" className="text-black/60 hover:text-black transition-colors">Network</a></li>
+              <li><a href="#" className="text-black/60 hover:text-black transition-colors">Security</a></li>
+              <li><a href="#" className="text-black/60 hover:text-black transition-colors">Rewards</a></li>
+              <li><a href="#" className="text-black/60 hover:text-black transition-colors">Tokenomics</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="text-black font-semibold mb-4">Developers</h4>
+            <ul className="space-y-3">
+              <li><a href="#" className="text-black/60 hover:text-black transition-colors">Documentation</a></li>
+              <li><a href="#" className="text-black/60 hover:text-black transition-colors">GitHub</a></li>
+              <li><a href="#" className="text-black/60 hover:text-black transition-colors">Grants</a></li>
+              <li><a href="#" className="text-black/60 hover:text-black transition-colors">Smart Contracts</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="text-black font-semibold mb-4">Company</h4>
+            <ul className="space-y-3">
+              <li><a href="#" className="text-black/60 hover:text-black transition-colors">About</a></li>
+              <li><a href="#" className="text-black/60 hover:text-black transition-colors">Blog</a></li>
+              <li><a href="#" className="text-black/60 hover:text-black transition-colors">Careers</a></li>
+              <li><a href="#" className="text-black/60 hover:text-black transition-colors">Contact</a></li>
+            </ul>
+          </div>
+        </div>
+        <div className="max-w-[88rem] mx-auto mt-16 pt-8 border-t border-black/5 flex flex-col md:flex-row items-center justify-between gap-4">
+          <p className="text-black/40 text-sm">© 2026 Inbox3. All rights reserved.</p>
+          <div className="flex items-center gap-6">
+            <a href="#" className="text-black/40 hover:text-black transition-colors text-sm">Terms</a>
+            <a href="#" className="text-black/40 hover:text-black transition-colors text-sm">Privacy</a>
+            <a href="#" className="text-black/40 hover:text-black transition-colors text-sm">Cookies</a>
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }
