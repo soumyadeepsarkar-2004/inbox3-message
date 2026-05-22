@@ -63,5 +63,8 @@
     "typescript-eslint": "^8.58.2",
     "vite": "^6.3.5",
     "vitest": "^3.2.4"
+  },
+  "overrides": {
+    "@aptos-labs/ts-sdk": "$@aptos-labs/ts-sdk"
   }
 }

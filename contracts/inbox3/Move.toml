@@ -7,9 +7,12 @@ authors = []
 inbox3_addr = "_"
 std = "0x1"
 
+[dev-addresses]
+inbox3_addr = "0x123"
+
 [dependencies.AptosFramework]
 git = "https://github.com/aptos-labs/aptos-core.git"
-rev = "testnet"
-sub = "aptos-move/framework/aptos-framework"
+rev = "mainnet"
+subdir = "aptos-move/framework/aptos-framework"
 
 [dev-dependencies]

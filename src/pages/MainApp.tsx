@@ -5,7 +5,6 @@ import { useAuth } from '../context/AuthContext'
 import { useWallet } from '../context/WalletProvider'
 import { useAppStore } from '../store/useAppStore'
 import { toast } from 'sonner'
-import BackgroundCanvas from '../components/canvas/BackgroundCanvas'
 import MessageCard, { type Message } from '../components/chat/MessageCard'
 import ChatInput from '../components/chat/ChatInput'
 import ChatHeader from '../components/chat/ChatHeader'
@@ -192,7 +191,6 @@ export default function MainApp() {
 
   return (
     <div className="flex h-screen w-full bg-black/80 backdrop-blur-xl text-white overflow-hidden">
-      <BackgroundCanvas />
       <ComposeMessageModal open={showCompose} onClose={() => setShowCompose(false)} onSend={handleComposeSend} />
 
       <aside className={`${showSidebar || window.innerWidth >= 1024 ? 'flex' : 'hidden'} flex-col w-full lg:w-96 lg:min-w-96 border-r border-white/5 bg-black/50 backdrop-blur-xl relative z-10`}>

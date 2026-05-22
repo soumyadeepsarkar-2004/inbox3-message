@@ -1,236 +1,200 @@
-import { useState } from 'react';
-import { Wallet, Shield, Layers, ArrowRight, CheckCircle2, RefreshCw, ExternalLink } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react'
+import { Link } from 'react-router-dom'
+
+function LogoIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 256 256" className={`w-7 h-7 ${className || ''}`} fill="currentColor">
+      <path d="M 128.005 191.173 C 128.448 156.208 156.93 128 192 128 L 192 64 L 128 64 C 128 99.346 99.346 128 64 128 L 64 192 L 128 192 Z M 192 256 L 64 256 C 28.654 256 0 227.346 0 192 L 0 64 L 64 64 L 64 0 L 192 0 C 227.346 0 256 28.654 256 64 L 256 192 L 192 192 Z" />
+    </svg>
+  )
+}
+
+const brands = [
+  { name: 'Stripe', style: { fontFamily: 'Georgia, serif', fontWeight: 700, letterSpacing: '-0.02em', fontSize: '15px' } },
+  { name: 'COINBASE', style: { fontFamily: 'Arial, sans-serif', fontWeight: 900, letterSpacing: '0.08em', fontSize: '13px', textTransform: 'uppercase' as const } },
+  { name: 'Uniswap', style: { fontFamily: '"Trebuchet MS", sans-serif', fontWeight: 600, letterSpacing: '0.01em', fontSize: '15px', fontStyle: 'italic' as const } },
+  { name: 'AAVE', style: { fontFamily: '"Courier New", monospace', fontWeight: 700, letterSpacing: '0.12em', fontSize: '13px', textTransform: 'uppercase' as const } },
+  { name: 'Compound', style: { fontFamily: 'Palatino, "Book Antiqua", serif', fontWeight: 400, letterSpacing: '-0.01em', fontSize: '16px' } },
+  { name: 'MakerDAO', style: { fontFamily: 'Impact, "Arial Narrow", sans-serif', fontWeight: 400, letterSpacing: '0.04em', fontSize: '14px' } },
+  { name: 'Chainlink', style: { fontFamily: 'Verdana, sans-serif', fontWeight: 700, letterSpacing: '-0.03em', fontSize: '13px' } },
+]
+
+const backers = [
+  { name: 'Fundamental Labs', style: { fontFamily: 'Times New Roman, serif', fontWeight: 400, letterSpacing: '0.02em', fontSize: '14px' } },
+  { name: 'KUCOIN', style: { fontFamily: '"Arial Black", sans-serif', fontWeight: 900, letterSpacing: '0.08em', fontSize: '16px' } },
+  { name: 'NGC', style: { fontFamily: 'Impact, sans-serif', fontWeight: 700, letterSpacing: '0.05em', fontSize: '18px' } },
+  { name: 'NxGen', style: { fontFamily: 'Georgia, serif', fontWeight: 600, letterSpacing: '-0.02em', fontSize: '17px' } },
+  { name: 'Matter Labs', style: { fontFamily: 'Helvetica, sans-serif', fontWeight: 700, letterSpacing: '-0.01em', fontSize: '15px' } },
+  { name: 'DEXTOOLS', style: { fontFamily: 'Verdana, sans-serif', fontWeight: 700, letterSpacing: '0.06em', fontSize: '14px', textTransform: 'uppercase' as const } },
+  { name: 'NGRAVE', style: { fontFamily: '"Courier New", monospace', fontWeight: 700, letterSpacing: '0.18em', fontSize: '14px' } },
+  { name: 'Polychain', style: { fontFamily: 'Palatino, serif', fontWeight: 500, letterSpacing: '0.03em', fontSize: '15px' } },
+]
 
 export default function LandingPage() {
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'social' | 'native'>('social');
-  const [isInitializing, setIsInitializing] = useState(false);
-  const [initStep, setInitStep] = useState(0);
-
-  const initializationSteps = [
-    "Verifying cryptographic identity proof...",
-    "Allocating decentralized storage registers...",
-    "Deploying on-chain mailbox structures to Aptos..."
-  ];
-
-  const handleAuthTransition = (target: string) => {
-    setIsInitializing(true);
-    setInitStep(0);
-    const interval = setInterval(() => {
-      setInitStep((prev) => {
-        if (prev >= initializationSteps.length - 1) {
-          clearInterval(interval);
-          setTimeout(() => navigate(target), 800);
-          return prev;
-        }
-        return prev + 1;
-      });
-    }, 1200);
-  };
-
   return (
-    <div className="min-h-screen bg-[#0B0C0E] text-slate-100 font-sans relative overflow-hidden flex flex-col">
-      
-      {/* 1. Structural Global Header Line */}
-      <header className="w-full border-b border-white/[0.05] bg-[#0B0C0E]/80 backdrop-blur-md z-50 sticky top-0">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-lg bg-gradient-to-tr from-[#FF5A00] to-[#FF7A00] flex items-center justify-center font-mono font-bold text-black text-lg shadow-[0_0_20px_rgba(255,90,0,0.2)]">
-              in3
+    <div className="flex flex-col bg-[#F5F5F5] font-tt-norms text-black min-h-screen">
+      <div className="h-screen flex flex-col overflow-hidden max-w-[88rem] mx-auto w-full">
+        {/* Navbar */}
+        <nav className="absolute top-0 left-0 right-0 z-20 px-6 py-5">
+          <div className="max-w-[88rem] mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <LogoIcon className="text-black" />
+              <span className="text-2xl font-medium tracking-tight text-black">Inbox3</span>
             </div>
-            <span className="font-mono tracking-wider text-lg font-bold uppercase bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
-              Inbox3
-            </span>
+            <div className="hidden md:flex items-center gap-8">
+              {['Network', 'Ecosystem', 'Rewards', 'Help', 'News'].map((item) => (
+                <a key={item} href="#" className="text-base text-gray-700 hover:text-black font-medium transition-colors duration-200">
+                  {item}
+                </a>
+              ))}
+            </div>
+            <Link to="/signup" className="bg-black text-white text-base font-medium px-7 py-2.5 rounded-full hover:bg-gray-800 transition-colors duration-200">
+              Open Wallet
+            </Link>
           </div>
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono text-xs">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-              Aptos Testnet
-            </span>
+        </nav>
+
+        {/* Hero Section */}
+        <div className="flex-1 px-6 pt-20 pb-6 flex items-end">
+          <div className="w-full relative rounded-2xl overflow-hidden" style={{ height: 'calc(100vh - 96px)' }}>
+            <video autoPlay muted loop playsInline className="absolute inset-0 w-full h-full object-cover">
+              <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260423_161253_c72b1869-400f-45ed-ac0c-52f68c2ed5bd.mp4" type="video/mp4" />
+            </video>
+            
+            <div className="relative z-10 flex flex-col items-start justify-start h-full p-12 pt-36">
+              <h1 className="text-black text-5xl md:text-6xl font-medium leading-tight max-w-xl mb-4" style={{ letterSpacing: '-0.04em' }}>
+                Your Messages<br />Stay Yours
+              </h1>
+              <p className="text-black/70 text-base md:text-lg max-w-md mb-8 leading-relaxed" style={{ fontFamily: "'Inter', ui-sans-serif, system-ui, sans-serif" }}>
+                An automated, reward-powered decentralized messaging platform built for native privacy and effortless connection into Web3.
+              </p>
+              
+              <Link to="/signup" className="inline-flex items-center gap-3 bg-black text-white text-base md:text-lg font-medium pl-8 pr-2 py-2 rounded-full hover:bg-gray-800 transition-colors duration-200">
+                Join us
+                <span className="bg-white rounded-full p-2">
+                  <ArrowRight className="w-5 h-5 text-black" />
+                </span>
+              </Link>
+
+              {/* Brand Marquee */}
+              <div className="mt-24 w-full max-w-md overflow-hidden">
+                <div className="marquee-track">
+                  {[...brands, ...brands].map((brand, i) => (
+                    <span key={i} className="mx-7 shrink-0 text-black/60 whitespace-nowrap" style={brand.style}>
+                      {brand.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </header>
+      </div>
 
-      {/* Main Core Layout Split Grid */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-6 grid lg:grid-cols-12 gap-12 items-center py-12 z-10">
-        
-        {/* Pane A: Pure Structural Brand Value Anchor */}
-        <div className="lg:col-span-5 space-y-8 text-left">
-          <div className="space-y-4">
-            <span className="px-3 py-1 rounded-md bg-[#FF5A00]/10 border border-[#FF5A00]/20 text-[#FF5A00] font-mono text-xs uppercase tracking-widest font-semibold">
-              Autonomous Communications
-            </span>
-            <h1 className="text-4xl lg:text-5xl font-bold tracking-tight text-white leading-tight">
-              The Sovereign Messaging Layer.
-            </h1>
-            <p className="text-slate-400 text-base leading-relaxed">
-              Experience completely decentralized, end-to-end encrypted messaging running directly on the native framework layer of the Aptos blockchain network.
+      {/* Info Section ("Meet Inbox3.") */}
+      <section className="bg-[#F5F5F5] px-6 py-24">
+        <div className="max-w-[88rem] mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-16 items-start">
+            <div>
+              <h2 className="text-black text-4xl md:text-5xl font-medium leading-tight mb-8" style={{ letterSpacing: '-0.03em' }}>
+                Meet Inbox3.
+              </h2>
+              <Link to="/signup" className="inline-flex items-center gap-3 bg-black text-white text-base font-medium pl-8 pr-2 py-2 rounded-full hover:bg-gray-800 transition-colors duration-200">
+                Discover it
+                <span className="bg-white rounded-full p-2">
+                  <ArrowRight className="w-5 h-5 text-black" />
+                </span>
+              </Link>
+            </div>
+            <div>
+              <p className="text-black/70 text-2xl md:text-3xl leading-relaxed">
+                Inbox3 is a reward-earning messaging platform that lets your conversations stay private while growing your on-chain reputation.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="lg:col-span-2 rounded-2xl overflow-hidden" style={{ backgroundImage: 'url(https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260423_164207_f243351d-ed59-48ec-83a0-a5e996bdbe3c.png&w=1280&q=85)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+              <div className="p-7 min-h-80 flex flex-col justify-between">
+                <h3 className="text-black text-2xl font-medium leading-snug" style={{ letterSpacing: '-0.02em' }}>
+                  Privacy that blooms
+                </h3>
+                <p className="text-black/70 text-base max-w-xs">
+                  Gain steady trust as your encrypted messages are routed through top-performing decentralized networks.
+                </p>
+              </div>
+            </div>
+            <div className="rounded-2xl p-7 min-h-80 flex flex-col justify-between" style={{ backgroundColor: '#2B2644' }}>
+              <h3 className="text-white text-2xl font-medium leading-snug">
+                Always fluid,<br />always private.
+              </h3>
+              <p className="text-white/60 text-base">
+                Keep fully encrypted with on-demand access to your messages — no lockups or waits.
+              </p>
+            </div>
+            <div className="rounded-2xl p-7 min-h-80 flex flex-col justify-between" style={{ backgroundColor: '#2B2644' }}>
+              <h3 className="text-white text-2xl font-medium leading-snug">
+                Fully<br />automated
+              </h3>
+              <p className="text-white/60 text-base">
+                Skip the task of managing keys yourself. Inbox3 runs in the background for you.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Backed By Section */}
+      <section className="bg-[#F5F5F5] px-6">
+        <div className="max-w-[88rem] mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 items-center">
+          <div className="text-black/70 text-base leading-relaxed">
+            Funded by premier partners<br />and forward-thinking leaders.
+          </div>
+          <div className="md:col-span-3 overflow-hidden">
+            <div className="backers-track">
+              {[...backers, ...backers].map((backer, i) => (
+                <span key={i} className="mx-10 shrink-0 text-black/50 whitespace-nowrap" style={backer.style}>
+                  {backer.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Use Cases Section */}
+      <section className="bg-[#F5F5F5] px-6 py-24">
+        <div className="max-w-[88rem] mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+          <div className="md:pr-12 md:pt-2">
+            <p className="text-black/60 text-sm mb-2">Inbox3 in Practice</p>
+            <h2 className="text-5xl md:text-6xl font-medium leading-none mb-6" style={{ letterSpacing: '-0.04em' }}>
+              Use modes
+            </h2>
+            <p className="text-black/60 text-base leading-relaxed max-w-sm">
+              Inbox3 powers a wide range of modes for builders, companies and communities wanting safe and rewarding decentralized messaging integrations plus more.
             </p>
           </div>
-
-          <div className="space-y-4 border-t border-white/[0.05] pt-6">
-            <div className="flex gap-4 items-start">
-              <div className="p-2 rounded-lg bg-white/[0.03] border border-white/[0.05] text-[#FF5A00] mt-0.5">
-                <Shield className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-slate-200">Local Zero-Knowledge Encryption</h3>
-                <p className="text-xs text-slate-400 mt-0.5">Payloads are entirely encrypted locally using peer public keys before transaction finalization.</p>
-              </div>
-            </div>
-
-            <div className="flex gap-4 items-start">
-              <div className="p-2 rounded-lg bg-white/[0.03] border border-white/[0.05] text-[#FF5A00] mt-0.5">
-                <Layers className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-slate-200">SmartVector Indexing Structures</h3>
-                <p className="text-xs text-slate-400 mt-0.5">Highly optimized on-chain data architecture maps gas fees to constant efficiency limits.</p>
-              </div>
+          <div className="relative rounded-3xl overflow-hidden min-h-[720px]">
+            <video autoPlay muted loop playsInline className="absolute inset-0 w-full h-full object-cover">
+              <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260423_183428_ab5e672a-f608-4dcb-b319-f3e040f02e2d.mp4" type="video/mp4" />
+            </video>
+            <div className="relative z-10 p-10 md:p-12">
+              <h3 className="text-4xl md:text-5xl font-medium leading-tight mb-5" style={{ letterSpacing: '-0.03em' }}>
+                Commerce
+              </h3>
+              <p className="text-black/70 text-base max-w-md mb-8">
+                Lift customer retention by offering Inbox3, a trusted decentralized messaging platform with strong privacy, letting your patrons communicate with zero effort on your platform.
+              </p>
+              <Link to="/signup" className="inline-flex items-center gap-3 group">
+                <span className="text-black font-medium text-base">Know more</span>
+                <span className="w-9 h-9 rounded-full bg-white/80 backdrop-blur flex items-center justify-center group-hover:bg-white transition-colors">
+                  <ArrowRight className="w-4 h-4 text-black" />
+                </span>
+              </Link>
             </div>
           </div>
         </div>
-
-        {/* Pane B: Clean Glassmorphic Interactive Interaction Block */}
-        <div className="lg:col-span-7 flex justify-center lg:justify-end">
-          <div className="w-full max-w-xl bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 lg:p-8 backdrop-blur-xl shadow-[0_24px_60px_rgba(0,0,0,0.8)] relative">
-            
-            {!isInitializing ? (
-                <div className="space-y-6">
-                  <div className="space-y-1.5">
-                    <h2 className="text-xl font-bold text-white tracking-tight">Access Node Initialization</h2>
-                    <p className="text-xs text-slate-400">Generate or authenticate your secure decentralized node interface mapping.</p>
-                  </div>
-
-                  <div className="grid grid-cols-2 p-1 bg-black/40 border border-white/[0.05] rounded-xl">
-                    <button
-                      onClick={() => setActiveTab('social')}
-                      className={`py-2 text-xs font-semibold rounded-lg transition-all duration-200 ${
-                        activeTab === 'social' 
-                          ? 'bg-gradient-to-r from-[#FF5A00] to-[#FF7A00] text-black shadow-lg font-bold' 
-                          : 'text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      Keyless Social Entry
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('native')}
-                      className={`py-2 text-xs font-semibold rounded-lg transition-all duration-200 ${
-                        activeTab === 'native' 
-                          ? 'bg-gradient-to-r from-[#FF5A00] to-[#FF7A00] text-black shadow-lg font-bold' 
-                          : 'text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      Hardware / Extension
-                    </button>
-                  </div>
-
-                  <div className="min-h-[180px] flex flex-col justify-center">
-                    {activeTab === 'social' ? (
-                      <div className="space-y-3 w-full">
-                        <button 
-                          onClick={() => handleAuthTransition('/keyless')}
-                          className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl bg-white/[0.03] border border-white/[0.05] hover:border-[#FF5A00]/40 hover:bg-white/[0.05] transition-all duration-200 group text-left"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="h-5 w-5 flex items-center justify-center font-bold text-sm border border-white/20 rounded-md bg-white/5 text-white">G</div>
-                            <span className="text-sm font-medium text-slate-200">Continue via Google Authentication</span>
-                          </div>
-                          <ArrowRight className="h-4 w-4 text-slate-500 group-hover:text-[#FF5A00] transition-colors" />
-                        </button>
-                        
-                        <button 
-                          onClick={() => handleAuthTransition('/keyless')}
-                          className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl bg-white/[0.03] border border-white/[0.05] hover:border-[#FF5A00]/40 hover:bg-white/[0.05] transition-all duration-200 group text-left"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="h-5 w-5 flex items-center justify-center font-bold text-sm border border-white/20 rounded-md bg-white/5 text-white">A</div>
-                            <span className="text-sm font-medium text-slate-200">Continue via Apple Credentials</span>
-                          </div>
-                          <ArrowRight className="h-4 w-4 text-slate-500 group-hover:text-[#FF5A00] transition-colors" />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="space-y-3 w-full">
-                        <button 
-                          onClick={() => navigate('/wallet')}
-                          className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl bg-white/[0.03] border border-white/[0.05] hover:border-[#FF5A00]/40 hover:bg-[#FF5A00]/5 transition-all duration-200 group text-left"
-                        >
-                          <div className="flex items-center gap-3">
-                            <Wallet className="h-5 w-5 text-slate-400 group-hover:text-[#FF5A00]" />
-                            <span className="text-sm font-medium text-slate-200">Connect Petra Extension Wallet</span>
-                          </div>
-                          <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-white/5 border border-white/10 text-slate-400">Detected</span>
-                        </button>
-                        
-                        <button 
-                          onClick={() => navigate('/wallet')}
-                          className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl bg-white/[0.03] border border-white/[0.05] hover:border-[#FF5A00]/40 hover:bg-[#FF5A00]/5 transition-all duration-200 group text-left opacity-60"
-                        >
-                          <div className="flex items-center gap-3">
-                            <Wallet className="h-5 w-5 text-slate-400" />
-                            <span className="text-sm font-medium text-slate-200">Connect Martian Wallet Adapter</span>
-                          </div>
-                          <ArrowRight className="h-4 w-4 text-slate-600" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="text-center">
-                    <p className="text-[11px] text-slate-500 font-mono">
-                      By accessing this network registry node, you validate execution of distributed AIP specifications.
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="py-6 space-y-8 flex flex-col items-center text-center">
-                  <div className="relative flex items-center justify-center h-16 w-16">
-                    <div className="absolute inset-0 rounded-full border-2 border-t-[#FF5A00] border-r-transparent border-b-transparent border-l-transparent animate-spin duration-700" />
-                    <Shield className="h-6 w-6 text-[#FF5A00] animate-pulse" />
-                  </div>
-
-                  <div className="space-y-4 w-full max-w-sm">
-                    <div className="space-y-1">
-                      <h3 className="text-md font-semibold text-white">Generating Genesis Credentials</h3>
-                      <p className="text-xs text-slate-400 font-mono tracking-tight">Initializing secure decentralized session context...</p>
-                    </div>
-
-                    <div className="space-y-2.5 text-left border border-white/[0.04] bg-black/30 rounded-xl p-4 font-mono text-[11px]">
-                      {initializationSteps.map((step, idx) => (
-                        <div key={idx} className="flex items-center gap-2.5">
-                          {initStep > idx ? (
-                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
-                          ) : initStep === idx ? (
-                            <RefreshCw className="h-3.5 w-3.5 text-[#FF5A00] animate-spin shrink-0" />
-                          ) : (
-                            <div className="h-3.5 w-3.5 rounded-full border border-white/20 shrink-0" />
-                          )}
-                          <span className={initStep === idx ? "text-[#FF5A00]" : initStep > idx ? "text-slate-300" : "text-slate-600"}>
-                            {step}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-          </div>
-        </div>
-      </main>
-
-      <footer className="w-full border-t border-white/[0.04] bg-black/20 py-4 z-10 mt-auto">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4 font-mono text-[10px] text-slate-500">
-          <div>© 2026 Inbox3 Protocol. All sovereign rights reserved.</div>
-          <div className="flex gap-6">
-            <a href="#explorer" className="hover:text-slate-300 transition-colors flex items-center gap-1">Contract Explorer <ExternalLink className="h-3 w-3" /></a>
-            <a href="#docs" className="hover:text-slate-300 transition-colors">Technical Architecture Specification</a>
-          </div>
-        </div>
-      </footer>
-
+      </section>
     </div>
-  );
+  )
 }
