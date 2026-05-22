@@ -10,6 +10,7 @@ import WalletConnectPage from './pages/WalletConnectPage'
 import KeylessAuthPage from './pages/KeylessAuthPage'
 import ProfilePage from './pages/ProfilePage'
 import MainApp from './pages/MainApp'
+import GithubCallbackPage from './pages/GithubCallbackPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
@@ -27,7 +28,8 @@ function AppRoutes() {
         <Route path="/login" element={user ? <Navigate to="/app" replace /> : <LoginPage />} />
         <Route path="/wallet" element={user ? <Navigate to="/app" replace /> : <WalletConnectPage />} />
         <Route path="/keyless" element={user ? <Navigate to="/app" replace /> : <KeylessAuthPage />} />
-        <Route path="/profile" element={user ? <Navigate to="/app" replace /> : <ProfilePage />} />
+        <Route path="/profile" element={user ? <ProfilePage /> : <Navigate to="/login" replace />} />
+        <Route path="/auth/github/callback" element={<GithubCallbackPage />} />
         <Route
           path="/app"
           element={

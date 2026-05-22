@@ -210,6 +210,32 @@ export function useKeylessAuth() {
     return loadKeylessAccount()
   }, [])
 
+  const signInWithGithub = useCallback(async () => {
+    try {
+      toast.loading('Redirecting to GitHub sign-in...')
+
+      const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID
+      if (!clientId) {
+        throw new Error('GitHub Client ID not configured')
+      }
+
+      const redirectUri = `${window.location.origin}/auth/github/callback`
+      const state = crypto.randomUUID()
+      sessionStorage.setItem('github_oauth_state', state)
+
+      const url = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&scope=read:user+user:email`
+
+      window.location.href = url
+
+      await new Promise(() => {})
+    } catch (err) {
+      toast.dismiss()
+      const message = err instanceof Error ? err.message : 'GitHub sign-in failed'
+      toast.error('Authentication failed', { description: message })
+      throw err
+    }
+  }, [])
+
   const signOut = useCallback(() => {
     localStorage.removeItem(STORAGE_KEY)
     toast.info('Signed out')
@@ -218,6 +244,7 @@ export function useKeylessAuth() {
   return {
     signInWithGoogle,
     signInWithApple,
+    signInWithGithub,
     signInWithPasskey,
     restoreSession,
     signOut,

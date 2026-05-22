@@ -1,15 +1,35 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { AuthContext } from './AuthTypes'
 import type { AuthContextType, User } from './AuthTypes'
 import type { ReactNode } from 'react'
 import { useKeylessAuth, type KeylessAccount } from '../hooks/useKeylessAuth'
+
+const GITHUB_AUTH_KEY = 'github_auth_completed'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(false)
   const [step, setStep] = useState<AuthContextType['step']>('signup')
   const [pendingUser, setPendingUser] = useState<Partial<User>>({})
-  const { signInWithGoogle, signInWithApple, signInWithPasskey } = useKeylessAuth()
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(GITHUB_AUTH_KEY)
+      if (stored) {
+        const data = JSON.parse(stored)
+        localStorage.removeItem(GITHUB_AUTH_KEY)
+        setPendingUser({
+          name: data.name,
+          email: data.email,
+          authMethod: 'keyless',
+        })
+        setStep('profile')
+      }
+    } catch {
+      localStorage.removeItem(GITHUB_AUTH_KEY)
+    }
+  }, [])
+  const { signInWithGoogle, signInWithApple, signInWithGithub, signInWithPasskey } = useKeylessAuth()
 
   const signupWithEmail = useCallback(async (email: string, _password: string, name: string) => {
     setLoading(true)
@@ -51,11 +71,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const connectWithGithub = useCallback(async () => {
     setLoading(true)
-    await new Promise(r => setTimeout(r, 1500))
-    setPendingUser({ email: 'user@github.com', name: 'GitHub User' })
-    setStep('profile')
-    setLoading(false)
-  }, [])
+    try {
+      await signInWithGithub()
+    } catch {
+      setStep('signup')
+    } finally {
+      setLoading(false)
+    }
+  }, [signInWithGithub])
 
   const connectWithApple = useCallback(async () => {
     setLoading(true)

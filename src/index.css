@@ -1,7 +1,16 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
+  --font-sans: "TT Norms Pro", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --color-halo-bg: #F5F5F5;
+  --color-halo-dark: #1A1A1A;
+  --color-halo-deep: #2B2644;
+  --color-halo-accent: #FF5A00;
+  --color-halo-accent-hover: #E55A2B;
+  --color-brand-gray: #1A1A1A;
+
   --color-background: #0a0a0f;
   --color-surface: #12121a;
   --color-surface-elevated: #1a1a25;
@@ -10,44 +19,62 @@
   --color-text-primary: #f5f5f7;
   --color-text-secondary: #a1a1aa;
   --color-text-muted: #71717a;
-  --color-primary: #A855F7;
-  --color-primary-hover: #9333EA;
-  --color-primary-muted: rgba(168, 85, 247, 0.1);
+  --color-primary: #FF5A00;
+  --color-primary-hover: #E55A2B;
+  --color-primary-muted: rgba(255, 90, 0, 0.1);
   --color-accent: #FF6B35;
   --color-accent-hover: #E55A2B;
   --color-accent-muted: rgba(255, 107, 53, 0.1);
   --color-success: #22C55E;
   --color-warning: #F59E0B;
   --color-destructive: #EF4444;
-  --color-brand-gray: #1A1A1A;
   --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
   --radius-2xl: 1.25rem;
   --radius-full: 9999px;
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+@font-face {
+  font-family: "TT Norms Pro";
+  src: url("/fonts/tt-norms-pro-regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "TT Norms Pro";
+  src: url("/fonts/tt-norms-pro-semibold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
 }
 
 @layer base {
+  html, body {
+    font-family: "TT Norms Pro", "Inter", ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: -0.01em;
+  }
   * { @apply border-border; }
   body {
-    @apply font-sans antialiased;
+    @apply antialiased;
   }
 }
 
 @layer utilities {
   .text-gradient {
-    background: linear-gradient(135deg, #A855F7, #FF6B35);
+    background: linear-gradient(135deg, #FF5A00, #FF6B35);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
   .bg-gradient-brand {
-    background: linear-gradient(135deg, #A855F7, #FF6B35);
+    background: linear-gradient(135deg, #FF5A00, #FF6B35);
   }
   .glow-primary {
-    box-shadow: 0 0 40px rgba(168, 85, 247, 0.3);
+    box-shadow: 0 0 40px rgba(255, 90, 0, 0.3);
   }
   .glow-accent {
     box-shadow: 0 0 40px rgba(255, 107, 53, 0.3);
@@ -56,6 +83,9 @@
     background: rgba(255, 255, 255, 0.03);
     backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  h1, h2, h3, .tight-tracking {
+    letter-spacing: -0.03em;
   }
 }
 

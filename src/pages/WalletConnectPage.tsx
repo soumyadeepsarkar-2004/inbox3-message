@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Wallet, Shield, ArrowRight, CheckCircle2, RefreshCw, ExternalLink } from 'lucide-react'
-import { Link, useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import { ArrowRight, ExternalLink } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useWallet } from '../context/WalletProvider'
 import { toast } from 'sonner'
@@ -11,8 +11,6 @@ import {
 
 export default function WalletConnectPage() {
   const [connecting, setConnecting] = useState<string | null>(null)
-  const [isInitializing, setIsInitializing] = useState(false)
-  const [initStep, setInitStep] = useState(0)
   const { connectWallet, loading: authLoading } = useAuth()
   const { connect, connected, address } = useWallet()
   const navigate = useNavigate()
@@ -20,12 +18,6 @@ export default function WalletConnectPage() {
   const allWallets = aptosStandardSupportedWalletList.filter(
     (w) => !['Aptos Connect', 'Google', 'Apple'].includes(w.name)
   )
-
-  const initializationSteps = [
-    'Establishing secure channel with extension...',
-    'Verifying cryptographic signatures...',
-    'Mapping wallet identity to Aptos address...'
-  ]
 
   useEffect(() => {
     if (connected && address) {
@@ -35,26 +27,14 @@ export default function WalletConnectPage() {
 
   const handleConnect = async (name: string) => {
     setConnecting(name)
-    setIsInitializing(true)
-    setInitStep(0)
     try {
       await connect()
       await connectWallet(name, address || '')
       toast.success('Connected successfully')
-      const interval = setInterval(() => {
-        setInitStep((prev) => {
-          if (prev >= initializationSteps.length - 1) {
-            clearInterval(interval)
-            setTimeout(() => navigate('/profile'), 600)
-            return prev
-          }
-          return prev + 1
-        })
-      }, 1200)
+      navigate('/profile')
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Connection failed'
       toast.error('Connection failed', { description: message })
-      setIsInitializing(false)
       setConnecting(null)
     }
   }
@@ -67,183 +47,123 @@ export default function WalletConnectPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0B0C0E] text-slate-100 font-sans relative overflow-hidden flex flex-col">
+    <main className="flex min-h-screen w-full bg-black selection:bg-white/30 p-2 transition-all duration-500 lg:h-screen lg:overflow-hidden lg:p-4">
+      {/* Left Column — Hero */}
+      <div className="hidden lg:flex relative flex-col items-center justify-end pb-32 px-12 rounded-3xl overflow-hidden shadow-2xl h-full w-[52%]">
+        <video autoPlay muted loop playsInline className="absolute inset-0 w-full h-full object-cover">
+          <source
+            src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260506_081238_406ed0e3-5d83-436e-a512-0bbff7ec5b95.mp4"
+            type="video/mp4"
+          />
+        </video>
 
-      {/* Global Header Line */}
-      <header className="w-full border-b border-white/[0.05] bg-[#0B0C0E]/80 backdrop-blur-md z-50 sticky top-0">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link to="/login" className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-lg bg-gradient-to-tr from-[#FF5A00] to-[#FF7A00] flex items-center justify-center font-mono font-bold text-black text-lg shadow-[0_0_20px_rgba(255,90,0,0.2)]">
-              in3
+        <motion.div
+          className="relative z-10 w-full max-w-xs space-y-8"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ staggerChildren: 0.15, delayChildren: 0.2 }}
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="flex items-center gap-2"
+          >
+            <div className="w-6 h-6 rounded bg-gradient-to-br from-[#FF5A00] to-[#FF7A00] flex items-center justify-center text-xs font-bold text-black">i3</div>
+            <span className="text-xl font-semibold tracking-tight text-white">Inbox3</span>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <h2 className="text-4xl font-medium tracking-tight whitespace-nowrap text-white">Connect Your Wallet</h2>
+            <p className="text-white/60 text-sm leading-relaxed px-4 mt-2">
+              Link your Aptos wallet to access your decentralized inbox.
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="space-y-3"
+          >
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-white text-black border border-white">
+              <div className="w-7 h-7 rounded-full bg-black text-white flex items-center justify-center text-sm font-medium">1</div>
+              <span className="text-sm font-medium">Connect your wallet</span>
             </div>
-            <span className="font-mono tracking-wider text-lg font-bold uppercase bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
-              Inbox3
-            </span>
-          </Link>
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono text-xs">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              Aptos Testnet
-            </span>
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-brand-gray text-white border-none">
+              <div className="w-7 h-7 rounded-full bg-white/10 text-white/40 flex items-center justify-center text-sm font-medium">2</div>
+              <span className="text-sm font-medium text-white/60">Verify your identity</span>
+            </div>
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-brand-gray text-white border-none">
+              <div className="w-7 h-7 rounded-full bg-white/10 text-white/40 flex items-center justify-center text-sm font-medium">3</div>
+              <span className="text-sm font-medium text-white/60">Start messaging</span>
+            </div>
+          </motion.div>
+        </motion.div>
+      </div>
+
+      {/* Right Column — Wallet List */}
+      <div className="flex-1 flex flex-col items-center justify-center py-12 lg:py-6 px-4 sm:px-12 lg:px-16 xl:px-24 overflow-y-auto lg:overflow-hidden">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, ease: 'easeOut' }}
+          className="w-full max-w-xl space-y-8 lg:space-y-6 sm:space-y-10"
+        >
+          <div className="space-y-2">
+            <h1 className="text-3xl font-medium tracking-tight text-white">Select Wallet</h1>
+            <p className="text-white/40 text-sm">Choose your preferred Aptos wallet extension.</p>
           </div>
-        </div>
-      </header>
 
-      {/* Main Core Layout Split Grid */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-6 grid lg:grid-cols-12 gap-12 items-center py-12 z-10">
+          <div className="space-y-3">
+            {allWallets.map((wallet, i) => {
+              const installed = String(wallet.readyState) === 'Installed'
 
-        {/* Pane A: Brand Value Anchor */}
-        <div className="lg:col-span-5 space-y-8 text-left">
-          <div className="space-y-4">
-            <span className="px-3 py-1 rounded-md bg-[#FF5A00]/10 border border-[#FF5A00]/20 text-[#FF5A00] font-mono text-xs uppercase tracking-widest font-semibold">
-              Hardware Node Link
-            </span>
-            <h1 className="text-4xl lg:text-5xl font-bold tracking-tight text-white leading-tight">
-              Connect Your Wallet.
-            </h1>
-            <p className="text-slate-400 text-base leading-relaxed">
-              Link your Aptos wallet to access your decentralized inbox. Your wallet address becomes your unique identity on the sovereign messaging layer.
+              return (
+                <motion.button
+                  key={wallet.name}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.06 }}
+                  onClick={() => installed ? handleConnect(wallet.name) : handleInstall(wallet.name)}
+                  disabled={authLoading || connecting !== null}
+                  className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl bg-black border border-white/10 hover:bg-white/5 transition-all duration-200 group disabled:opacity-50"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-[#FF5A00]/20 to-[#FF7A00]/20 border border-white/10 flex items-center justify-center">
+                      <div className="w-4 h-4 flex items-center justify-center font-bold text-xs border border-white/20 rounded bg-white/5 text-white">{wallet.name.charAt(0)}</div>
+                    </div>
+                    <div className="text-left">
+                      <span className="text-sm font-medium text-white">{wallet.name}</span>
+                      <p className="text-[10px] text-white/40 mt-0.5">
+                        {installed ? 'Click to connect' : 'Installation required'}
+                      </p>
+                    </div>
+                  </div>
+                  {installed ? (
+                    <ArrowRight className="h-4 w-4 text-white/30 group-hover:text-white transition-colors" />
+                  ) : (
+                    <ExternalLink className="h-4 w-4 text-white/30" />
+                  )}
+                </motion.button>
+              )
+            })}
+          </div>
+
+          <div className="text-center">
+            <p className="text-sm text-white/40">
+              Don't have a wallet?{' '}
+              <a href="https://petra.app" target="_blank" rel="noopener noreferrer" className="text-white hover:text-white/80 transition-colors font-medium">
+                Download Petra
+              </a>
             </p>
           </div>
-
-          <div className="space-y-4 border-t border-white/[0.05] pt-6">
-            <div className="flex gap-4 items-start">
-              <div className="p-2 rounded-lg bg-white/[0.03] border border-white/[0.05] text-[#FF5A00] mt-0.5">
-                <Shield className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-slate-200">Secure Identity Mapping</h3>
-                <p className="text-xs text-slate-400 mt-0.5">Your wallet address is your username—no passwords, no email verification.</p>
-              </div>
-            </div>
-
-            <div className="flex gap-4 items-start">
-              <div className="p-2 rounded-lg bg-white/[0.03] border border-white/[0.05] text-[#FF6B35] mt-0.5">
-                <Wallet className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-slate-200">On-Chain Message Storage</h3>
-                <p className="text-xs text-slate-400 mt-0.5">All messages encrypted with your keys and stored on Aptos blockchain.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Pane B: Clean Glassmorphic Wallet Grid */}
-        <div className="lg:col-span-7 flex justify-center lg:justify-end">
-          <div className="w-full max-w-xl bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 lg:p-8 backdrop-blur-xl shadow-[0_24px_60px_rgba(0,0,0,0.8)] relative">
-
-            <AnimatePresence mode="wait">
-              {isInitializing ? (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="py-6 space-y-8 flex flex-col items-center text-center"
-                >
-                  <div className="relative flex items-center justify-center h-16 w-16">
-                    <div className="absolute inset-0 rounded-full border-2 border-t-[#FF5A00] border-r-transparent border-b-transparent border-l-transparent animate-spin duration-700" />
-                    <Wallet className="h-6 w-6 text-[#FF5A00] animate-pulse" />
-                  </div>
-
-                  <div className="space-y-4 w-full max-w-sm">
-                    <div className="space-y-1">
-                      <h3 className="text-md font-semibold text-white">Connecting to {connecting}</h3>
-                      <p className="text-xs text-slate-400 font-mono tracking-tight">Establishing secure channel with wallet extension...</p>
-                    </div>
-
-                    <div className="space-y-2.5 text-left border border-white/[0.04] bg-black/30 rounded-xl p-4 font-mono text-[11px]">
-                      {initializationSteps.map((step, idx) => (
-                        <div key={idx} className="flex items-center gap-2.5">
-                          {initStep > idx ? (
-                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
-                          ) : initStep === idx ? (
-                            <RefreshCw className="h-3.5 w-3.5 text-[#A855F7] animate-spin shrink-0" />
-                          ) : (
-                            <div className="h-3.5 w-3.5 rounded-full border border-white/20 shrink-0" />
-                          )}
-                          <span className={initStep === idx ? 'text-[#A855F7]' : initStep > idx ? 'text-slate-300' : 'text-slate-600'}>
-                            {step}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </motion.div>
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="space-y-6"
-                >
-                  <div className="space-y-1.5">
-                    <h2 className="text-xl font-bold text-white tracking-tight">Select Wallet Extension</h2>
-                    <p className="text-xs text-slate-400">Choose your preferred Aptos wallet to establish the secure connection.</p>
-                  </div>
-
-                  <div className="space-y-3">
-                    {allWallets.map((wallet, i) => {
-                      const installed = String(wallet.readyState) === 'Installed'
-
-                      return (
-                        <motion.button
-                          key={wallet.name}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: i * 0.06 }}
-                          onClick={() => installed ? handleConnect(wallet.name) : handleInstall(wallet.name)}
-                          disabled={authLoading}
-                          className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl bg-white/[0.03] border border-white/[0.05] hover:border-[#A855F7]/40 hover:bg-white/[0.05] transition-all duration-200 group disabled:opacity-50"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-lg bg-gradient-to-tr from-[#FF5A00]/20 to-[#FF7A00]/20 border border-white/[0.05] flex items-center justify-center">
-                              <Wallet className="h-4 w-4 text-[#FF5A00]" />
-                            </div>
-                            <div className="text-left">
-                              <span className="text-sm font-medium text-slate-200">{wallet.name}</span>
-                              <p className="text-[10px] text-slate-500 mt-0.5">
-                                {installed ? 'Click to connect' : 'Installation required'}
-                              </p>
-                            </div>
-                          </div>
-                          {installed ? (
-                            <ArrowRight className="h-4 w-4 text-slate-500 group-hover:text-[#A855F7] transition-colors" />
-                          ) : (
-                            <ExternalLink className="h-4 w-4 text-slate-600" />
-                          )}
-                        </motion.button>
-                      )
-                    })}
-                  </div>
-
-                  <div className="text-center">
-                    <p className="text-[11px] text-slate-500 font-mono">
-                      Don't have a wallet?{' '}
-                      <a href="https://petra.app" target="_blank" rel="noopener noreferrer" className="text-[#A855F7] hover:text-[#FF6B35] transition-colors font-medium">
-                        Download Petra
-                      </a>
-                    </p>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-          </div>
-        </div>
-      </main>
-
-      {/* Structured Footer Anchor */}
-      <footer className="w-full border-t border-white/[0.04] bg-black/20 py-4 z-10 mt-auto">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4 font-mono text-[10px] text-slate-500">
-          <div>© 2026 Inbox3 Protocol. All sovereign rights reserved.</div>
-          <div className="flex gap-6">
-            <a href="#explorer" className="hover:text-slate-300 transition-colors flex items-center gap-1">Contract Explorer <ExternalLink className="h-3 w-3" /></a>
-            <a href="#docs" className="hover:text-slate-300 transition-colors">Technical Architecture Specification</a>
-          </div>
-        </div>
-      </footer>
-
-    </div>
+        </motion.div>
+      </div>
+    </main>
   )
 }

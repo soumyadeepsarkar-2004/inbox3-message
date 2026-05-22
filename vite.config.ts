@@ -16,7 +16,6 @@ export default defineConfig({
       output: {
         manualChunks: {
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'three-vendor': ['three', '@react-three/fiber', '@react-three/drei'],
           'aptos-vendor': ['@aptos-labs/ts-sdk', '@aptos-labs/wallet-adapter-react'],
           'motion-vendor': ['framer-motion'],
           'utils-vendor': ['zustand', 'lucide-react', 'sonner', 'tweetnacl', 'tweetnacl-util'],

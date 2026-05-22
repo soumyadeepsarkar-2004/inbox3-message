@@ -18,7 +18,7 @@ export default function ChatHeader({ contact, onBack }: ChatHeaderProps) {
         </button>
 
         <div className="relative">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#A855F7] to-[#FF6B35] flex items-center justify-center text-xs font-semibold text-white">
+          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#FF5A00] to-[#FF7A00] flex items-center justify-center text-xs font-semibold text-white">
             {contact.avatar}
           </div>
           {contact.online && (

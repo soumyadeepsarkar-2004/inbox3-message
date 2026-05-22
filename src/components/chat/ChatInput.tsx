@@ -156,7 +156,7 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
           <button
             onClick={handleSend}
             disabled={disabled}
-            className="p-2.5 rounded-xl bg-gradient-to-r from-[#A855F7] to-[#FF6B35] hover:opacity-90 transition-all active:scale-95 disabled:opacity-50"
+            className="p-2.5 rounded-xl bg-[#FF5A00] hover:opacity-90 transition-all active:scale-95 disabled:opacity-50"
           >
             <Send className="w-4 h-4 text-white" />
           </button>

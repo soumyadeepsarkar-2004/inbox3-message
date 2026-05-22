@@ -3,9 +3,7 @@ import { MessageSquare, Users, Settings, Bell, Moon, Sun, LogOut, User, Shield, 
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useWallet } from '../context/WalletProvider'
-import { useAppStore } from '../store/useAppStore'
 import { toast } from 'sonner'
-import BackgroundCanvas from '../components/canvas/BackgroundCanvas'
 import MessageCard, { type Message } from '../components/chat/MessageCard'
 import ChatInput from '../components/chat/ChatInput'
 import ChatHeader from '../components/chat/ChatHeader'
@@ -39,7 +37,7 @@ export default function MainApp() {
   const [showCompose, setShowCompose] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const { performanceMode, togglePerformanceMode } = useAppStore()
+
 
   useEffect(() => {
     if (!encryptionManager.loadKeys()) {
@@ -192,7 +190,6 @@ export default function MainApp() {
 
   return (
     <div className="flex h-screen w-full bg-black/80 backdrop-blur-xl text-white overflow-hidden">
-      <BackgroundCanvas />
       <ComposeMessageModal open={showCompose} onClose={() => setShowCompose(false)} onSend={handleComposeSend} />
 
       <aside className={`${showSidebar || window.innerWidth >= 1024 ? 'flex' : 'hidden'} flex-col w-full lg:w-96 lg:min-w-96 border-r border-white/5 bg-black/50 backdrop-blur-xl relative z-10`}>
@@ -208,7 +205,7 @@ export default function MainApp() {
               </button>
               <button className="p-2 rounded-lg hover:bg-white/5 transition-colors relative">
                 <Bell className="w-4 h-4 text-white/60" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-gradient-to-r from-[#A855F7] to-[#FF6B35] rounded-full" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#FF5A00] rounded-full" />
               </button>
             </div>
           </div>
@@ -250,7 +247,7 @@ export default function MainApp() {
                 <p className="text-sm text-white/40">Your decentralized contacts</p>
                 <button
                   onClick={() => setShowCompose(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#A855F7] to-[#FF6B35] text-white text-xs font-medium hover:opacity-90 transition-all"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FF5A00] text-white text-xs font-medium hover:opacity-90 transition-all"
                 >
                   <Plus className="w-3 h-3" />
                   Add Contact
@@ -262,7 +259,7 @@ export default function MainApp() {
                   onClick={() => handleSelectContact(contact)}
                   className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors text-left"
                 >
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#A855F7] to-[#FF6B35] flex items-center justify-center text-sm font-medium">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#FF5A00] to-[#FF7A00] flex items-center justify-center text-sm font-medium">
                     {contact.avatar}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -285,12 +282,10 @@ export default function MainApp() {
                 { icon: Bell, label: 'Notifications', desc: 'Manage alerts' },
                 { icon: Shield, label: 'Privacy', desc: 'Encryption & security' },
                 { icon: Key, label: 'Keys', desc: 'Manage encryption keys' },
-                { icon: performanceMode ? Sun : Moon, label: performanceMode ? 'Performance Mode' : 'Standard Mode', desc: performanceMode ? '3D effects disabled' : 'Full animations enabled', action: togglePerformanceMode },
                 { icon: Trash2, label: 'Clear Data', desc: 'Remove local data' },
               ].map((item) => (
                 <button
                   key={item.label}
-                  onClick={item.action}
                   className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors text-left"
                 >
                   <item.icon className="w-4 h-4 text-white/40" />
@@ -316,7 +311,7 @@ export default function MainApp() {
             {user?.avatar ? (
               <img src={user.avatar} alt={user.name} className="w-9 h-9 rounded-full object-cover" />
             ) : (
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#A855F7] to-[#FF6B35] flex items-center justify-center text-xs font-semibold">
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#FF5A00] to-[#FF7A00] flex items-center justify-center text-xs font-semibold">
                 {(user?.name || 'ME').slice(0, 2).toUpperCase()}
               </div>
             )}
@@ -352,7 +347,7 @@ export default function MainApp() {
         ) : (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center max-w-sm">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-[#A855F7]/10 to-[#FF6B35]/10 flex items-center justify-center">
+              <div className="w-20 h-20 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-[#FF5A00]/10 to-[#FF7A00]/10 flex items-center justify-center">
                 <MessageSquare className="w-10 h-10 text-white/20" />
               </div>
               <h2 className="text-2xl font-medium text-white mb-2" style={{ letterSpacing: '-0.02em' }}>
@@ -363,7 +358,7 @@ export default function MainApp() {
               </p>
               <button
                 onClick={() => setShowCompose(true)}
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-[#A855F7] to-[#FF6B35] text-white text-sm font-medium px-6 py-2.5 rounded-full hover:opacity-90 transition-all active:scale-95"
+                className="inline-flex items-center gap-2 bg-[#FF5A00] text-white text-sm font-medium px-6 py-2.5 rounded-full hover:opacity-90 transition-all active:scale-95"
               >
                 <Plus className="w-4 h-4" />
                 New Message

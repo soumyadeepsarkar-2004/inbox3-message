@@ -4,8 +4,6 @@ import type { User } from '../context/AuthTypes'
 interface AppState {
   user: User | null
   setUser: (user: User | null) => void
-  performanceMode: boolean
-  togglePerformanceMode: () => void
   activeTab: 'messages' | 'contacts' | 'settings'
   setActiveTab: (tab: 'messages' | 'contacts' | 'settings') => void
   selectedContactId: string | null
@@ -23,8 +21,6 @@ interface AppState {
 export const useAppStore = create<AppState>((set) => ({
   user: null,
   setUser: (user) => set({ user }),
-  performanceMode: false,
-  togglePerformanceMode: () => set((s) => ({ performanceMode: !s.performanceMode })),
   activeTab: 'messages',
   setActiveTab: (activeTab) => set({ activeTab }),
   selectedContactId: null,

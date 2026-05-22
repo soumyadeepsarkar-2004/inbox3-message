@@ -70,7 +70,7 @@ export default function MessageCard({ message, onReact, isLast }: MessageCardPro
         <div
           className={`px-4 py-2.5 rounded-2xl ${
             message.direction === 'sent'
-              ? 'bg-gradient-to-br from-[#A855F7] to-[#FF6B35] text-white rounded-br-md'
+              ? 'bg-gradient-to-br from-[#FF5A00] to-[#FF7A00] text-white rounded-br-md'
               : 'bg-[#1A1A1A] text-white rounded-bl-md border border-white/5'
           } ${message.status === 'failed' ? 'opacity-60' : ''}`}
           onMouseDown={handleMouseDown}
