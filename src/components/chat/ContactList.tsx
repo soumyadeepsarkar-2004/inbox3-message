@@ -1,16 +1,6 @@
 import { motion } from 'framer-motion'
 import { useAppStore } from '../../store/useAppStore'
-
-interface Contact {
-  id: string
-  address: string
-  name: string
-  avatar: string
-  lastMessage: string
-  timestamp: string
-  unread: number
-  online: boolean
-}
+import type { Contact } from '../../hooks/useContactManager'
 
 interface ContactListProps {
   contacts: Contact[]

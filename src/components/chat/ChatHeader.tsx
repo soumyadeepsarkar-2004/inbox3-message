@@ -1,12 +1,5 @@
 import { Phone, Video, MoreVertical, ArrowLeft } from 'lucide-react'
-
-interface Contact {
-  id: string
-  address: string
-  name: string
-  avatar: string
-  online: boolean
-}
+import type { Contact } from '../../hooks/useContactManager'
 
 interface ChatHeaderProps {
   contact: Contact
