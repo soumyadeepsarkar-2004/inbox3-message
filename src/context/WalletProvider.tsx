@@ -1,5 +1,4 @@
 /* eslint-disable react-refresh/only-export-components */
-import { Network } from '@aptos-labs/ts-sdk'
 import { createContext, useContext, useCallback, type ReactNode } from 'react'
 import {
   useWallet as useWalletAdapter,
@@ -7,6 +6,7 @@ import {
   aptosStandardSupportedWalletList,
   type InputTransactionData,
 } from '@aptos-labs/wallet-adapter-react'
+import { Network } from '@aptos-labs/ts-sdk'
 import { useAppStore } from '../store/useAppStore'
 import type { TransactionPayload, WalletState } from './WalletTypes'
 
@@ -22,18 +22,23 @@ function WalletAdapterBridge({ children }: { children: ReactNode }) {
   const adapter = useWalletAdapter()
   const { setTxStatus, setTxHash } = useAppStore()
 
-  const connect = useCallback(async () => {
+  const connect = useCallback(async (walletName?: string) => {
     setTxStatus('signing')
     try {
-      const availableWallets = aptosStandardSupportedWalletList.filter(
-        (w) => String(w.readyState) === 'Installed'
-      )
-      if (availableWallets.length === 0) {
-        setTxStatus('failed')
-        throw new Error('No Aptos wallet detected. Please install Petra or another supported wallet.')
-      }
       if (adapter.connect) {
-        await adapter.connect(availableWallets[0].name)
+        const walletNameFromList = walletName || (adapter.wallet as { name?: string })?.name
+        if (walletNameFromList) {
+          await adapter.connect(walletNameFromList)
+        } else {
+          const availableWallets = aptosStandardSupportedWalletList.filter(
+            (w) => String(w.readyState) === 'Installed'
+          )
+          if (availableWallets.length === 0) {
+            setTxStatus('failed')
+            throw new Error('No Aptos wallet detected. Please install Petra or another supported wallet.')
+          }
+          await adapter.connect(availableWallets[0].name)
+        }
       }
       setTxStatus('confirmed')
     } catch (err) {
@@ -58,8 +63,8 @@ function WalletAdapterBridge({ children }: { children: ReactNode }) {
       const txData: InputTransactionData = {
         data: {
           function: (payload.function || 'inbox3_addr::inbox3::send_message') as `${string}::${string}::${string}`,
-          typeArguments: [],
-          functionArguments: [payload.content ?? '', payload.recipient ?? ''] as const,
+          typeArguments: payload.typeArguments ?? [],
+          functionArguments: payload.functionArguments as never[],
         },
       }
 
@@ -82,7 +87,7 @@ function WalletAdapterBridge({ children }: { children: ReactNode }) {
       value={{
         connected: adapter.connected,
         address: adapter.account?.address.toString() || null,
-        walletName: adapter.wallet?.name || null,
+        walletName: (adapter.wallet as { name?: string })?.name || null,
         connect,
         disconnect,
         signAndSubmit,
@@ -93,7 +98,7 @@ function WalletAdapterBridge({ children }: { children: ReactNode }) {
   )
 }
 
-const getAppNetwork = (): Network => {
+const getAppNetworkName = (): Network => {
   const envNetwork = import.meta.env.VITE_APTOS_NETWORK
 
   if (!envNetwork) {
@@ -113,7 +118,6 @@ const getAppNetwork = (): Network => {
     case 'localhost':
       return Network.LOCAL
     default:
-      console.warn(`Unrecognized network '${envNetwork}', defaulting to Testnet.`)
       return Network.TESTNET
   }
 }
@@ -122,10 +126,8 @@ export function Inbox3WalletProvider({ children }: { children: ReactNode }) {
   return (
     <AptosWalletAdapterProvider
       autoConnect={false}
-      dappConfig={{ network: getAppNetwork() }}
-      onError={(error) => {
-        console.error('Wallet adapter error:', error)
-      }}
+      dappConfig={{ network: getAppNetworkName() }}
+      onError={() => {}}
     >
       <WalletAdapterBridge>{children}</WalletAdapterBridge>
     </AptosWalletAdapterProvider>

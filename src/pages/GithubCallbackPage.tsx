@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-const GITHUB_AUTH_KEY = 'github_auth_completed'
-
 export default function GithubCallbackPage() {
   const [status, setStatus] = useState('Processing GitHub sign-in...')
   const navigate = useNavigate()
@@ -12,33 +10,29 @@ export default function GithubCallbackPage() {
     const code = params.get('code')
     const state = params.get('state')
     const storedState = sessionStorage.getItem('github_oauth_state')
+    const timers: ReturnType<typeof setTimeout>[] = []
 
     if (!code) {
       setStatus('No authorization code received. Redirecting...')
-      setTimeout(() => navigate('/signup'), 2000)
+      timers.push(setTimeout(() => navigate('/signup'), 2000))
       return
     }
 
     if (state && state !== storedState) {
       setStatus('State mismatch. Please try again.')
-      setTimeout(() => navigate('/signup'), 2000)
+      timers.push(setTimeout(() => navigate('/signup'), 2000))
       return
     }
 
     sessionStorage.removeItem('github_oauth_state')
     sessionStorage.setItem('github_oauth_code', code)
 
-    localStorage.setItem(GITHUB_AUTH_KEY, JSON.stringify({
-      name: 'GitHub User',
-      email: 'user@github.com',
-      timestamp: Date.now(),
-      code,
-    }))
-
     setStatus('GitHub authentication successful! Redirecting...')
-    setTimeout(() => {
-      window.location.href = '/profile'
-    }, 500)
+    timers.push(setTimeout(() => {
+      navigate('/profile')
+    }, 500))
+
+    return () => timers.forEach(clearTimeout)
   }, [navigate])
 
   return (

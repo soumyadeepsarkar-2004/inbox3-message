@@ -47,26 +47,32 @@ export function useContactManager() {
     saveContacts(contacts)
   }, [contacts])
 
-  const addContact = useCallback((address: string, name?: string) => {
+  const addContact = useCallback((address: string, name?: string): Contact | null => {
     if (!address) return null
-    const exists = contacts.find(c => c.address.toLowerCase() === address.toLowerCase())
-    if (exists) return exists
-
-    const displayName = name || shortAddress(address)
-    const contact: Contact = {
-      id: crypto.randomUUID(),
-      address,
-      name: displayName,
-      avatar: generateAvatar(displayName),
-      lastMessage: '',
-      timestamp: '',
-      unread: 0,
-      online: false,
-      addedAt: Date.now(),
-    }
-    setContacts(prev => [contact, ...prev])
-    return contact
-  }, [contacts])
+    let addedContact: Contact | null = null
+    setContacts(prev => {
+      const exists = prev.find(c => c.address.toLowerCase() === address.toLowerCase())
+      if (exists) {
+        addedContact = exists
+        return prev
+      }
+      const displayName = name || shortAddress(address)
+      const contact: Contact = {
+        id: crypto.randomUUID(),
+        address,
+        name: displayName,
+        avatar: generateAvatar(displayName),
+        lastMessage: '',
+        timestamp: '',
+        unread: 0,
+        online: false,
+        addedAt: Date.now(),
+      }
+      addedContact = contact
+      return [contact, ...prev]
+    })
+    return addedContact
+  }, [])
 
   const removeContact = useCallback((id: string) => {
     setContacts(prev => prev.filter(c => c.id !== id))
@@ -93,6 +99,43 @@ export function useContactManager() {
     setContacts(prev => prev.map(c => c.id === id ? { ...c, unread: 0 } : c))
   }, [])
 
+  const exportContacts = useCallback((): string => {
+    return JSON.stringify(contacts, null, 2)
+  }, [contacts])
+
+  const importContacts = useCallback((jsonStr: string): { imported: number; skipped: number } => {
+    try {
+      const parsed = JSON.parse(jsonStr)
+      if (!Array.isArray(parsed)) throw new Error('Invalid format')
+      let imported = 0
+      let skipped = 0
+      setContacts(prev => {
+        const existing = [...prev]
+        for (const c of parsed) {
+          if (!c.address || typeof c.address !== 'string') { skipped++; continue }
+          if (existing.some(e => e.address.toLowerCase() === c.address.toLowerCase())) { skipped++; continue }
+          existing.push({
+            id: crypto.randomUUID(),
+            address: c.address,
+            name: c.name || c.address.slice(0, 8),
+            avatar: generateAvatar(c.name || c.address),
+            lastMessage: '',
+            timestamp: '',
+            unread: 0,
+            online: false,
+            addedAt: Date.now(),
+            publicKey: c.publicKey || undefined,
+          })
+          imported++
+        }
+        return existing
+      })
+      return { imported, skipped }
+    } catch {
+      return { imported: 0, skipped: 0 }
+    }
+  }, [])
+
   return {
     contacts,
     addContact,
@@ -101,6 +144,8 @@ export function useContactManager() {
     getContactByAddress,
     searchContacts,
     markRead,
+    exportContacts,
+    importContacts,
   }
 }
 

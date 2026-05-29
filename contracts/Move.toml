@@ -1,0 +1,16 @@
+[package]
+name = "inbox3"
+version = "1.0.0"
+authors = []
+
+[addresses]
+inbox3 = "0xf91ca1a48cc5afee58b78ec7076966e07595f2e8dbaa249d91b139baafd011eb"
+
+[dev-addresses]
+
+[dependencies.AptosFramework]
+git = "https://github.com/aptos-labs/aptos-framework.git"
+rev = "mainnet"
+subdir = "aptos-framework"
+
+[dev-dependencies]

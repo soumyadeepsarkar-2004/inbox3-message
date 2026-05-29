@@ -1,16 +1,14 @@
 export interface TransactionPayload {
-  function?: string
+  function: string
   typeArguments?: string[]
-  functionArguments?: unknown[]
-  content?: string
-  recipient?: string
+  functionArguments: unknown[]
 }
 
 export interface WalletState {
   connected: boolean
   address: string | null
   walletName: string | null
-  connect: () => Promise<void>
+  connect: (walletName?: string) => Promise<void>
   disconnect: () => void
   signAndSubmit: (payload: TransactionPayload) => Promise<string | null>
 }

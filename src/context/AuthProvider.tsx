@@ -5,10 +5,30 @@ import type { ReactNode } from 'react'
 import { useKeylessAuth, type KeylessAccount } from '../hooks/useKeylessAuth'
 
 const GITHUB_AUTH_KEY = 'github_auth_completed'
+const AUTH_USER_KEY = 'inbox3_auth_user'
+
+function saveUser(user: User) {
+  try {
+    const serializable = { ...user, keylessAccount: undefined }
+    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(serializable))
+  } catch { /* storage full */ }
+}
+
+function loadUser(): User | null {
+  try {
+    const raw = localStorage.getItem(AUTH_USER_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch { return null }
+}
+
+function clearUser() {
+  try { localStorage.removeItem(AUTH_USER_KEY) } catch { /* ignore */ }
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<User | null>(loadUser)
   const [loading, setLoading] = useState(false)
+  const [initialized, setInitialized] = useState(false)
   const [step, setStep] = useState<AuthContextType['step']>('signup')
   const [pendingUser, setPendingUser] = useState<Partial<User>>({})
 
@@ -16,11 +36,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const stored = localStorage.getItem(GITHUB_AUTH_KEY)
       if (stored) {
-        const data = JSON.parse(stored)
         localStorage.removeItem(GITHUB_AUTH_KEY)
         setPendingUser({
-          name: data.name,
-          email: data.email,
           authMethod: 'keyless',
         })
         setStep('profile')
@@ -28,6 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       localStorage.removeItem(GITHUB_AUTH_KEY)
     }
+    setInitialized(true)
   }, [])
   const { signInWithGoogle, signInWithApple, signInWithGithub, signInWithPasskey } = useKeylessAuth()
 
@@ -56,8 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const account = await signInWithGoogle()
       setPendingUser({
-        email: 'user@gmail.com',
-        name: 'Google User',
+        name: account.address.slice(0, 8),
         keylessAccount: account,
         authMethod: 'keyless',
       })
@@ -85,8 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const account = await signInWithApple()
       setPendingUser({
-        email: 'user@icloud.com',
-        name: 'Apple User',
+        name: account.address.slice(0, 8),
         keylessAccount: account,
         authMethod: 'keyless',
       })
@@ -138,17 +154,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const finalizeProfile = useCallback(async (data: { name: string; bio?: string; avatar?: string }) => {
     setLoading(true)
     await new Promise(r => setTimeout(r, 1000))
-    setUser({
+    const newUser: User = {
       id: crypto.randomUUID(),
       ...pendingUser,
       ...data,
       createdAt: new Date().toISOString()
-    })
+    }
+    setUser(newUser)
+    saveUser(newUser)
     setLoading(false)
   }, [pendingUser])
 
   const logout = useCallback(() => {
     setUser(null)
+    clearUser()
     setPendingUser({})
     setStep('signup')
   }, [])
@@ -157,6 +176,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider value={{
       user,
       loading,
+      initialized,
       step,
       setStep,
       signupWithEmail,

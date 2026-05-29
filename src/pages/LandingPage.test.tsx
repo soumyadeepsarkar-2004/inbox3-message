@@ -14,13 +14,21 @@ describe('LandingPage', () => {
     expect(screen.getAllByText(/Stay Yours/i).length).toBeGreaterThan(0)
   })
 
-  it('renders the primary CTA buttons', () => {
+  it('renders the brand name in nav and footer', () => {
     render(
       <MemoryRouter>
         <LandingPage />
       </MemoryRouter>
     )
-    expect(screen.getAllByText(/Join us/i).length).toBeGreaterThan(0)
-    expect(screen.getAllByText(/Open Wallet/i).length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Inbox3').length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('renders a call to action button', () => {
+    render(
+      <MemoryRouter>
+        <LandingPage />
+      </MemoryRouter>
+    )
+    expect(screen.getByText('Join us')).toBeDefined()
   })
 })

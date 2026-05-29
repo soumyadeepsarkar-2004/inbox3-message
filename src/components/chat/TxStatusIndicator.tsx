@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { Check, CheckCheck, Clock, AlertCircle } from 'lucide-react'
+import type { ReactNode } from 'react'
 
 export type TxStatus = 'idle' | 'signing' | 'submitting' | 'confirmed' | 'failed'
 
@@ -8,7 +9,7 @@ interface TxStatusIndicatorProps {
   hash?: string | null
 }
 
-const statusConfig: Record<TxStatus, { label: string; color: string; icon: React.ReactNode }> = {
+const statusConfig: Record<TxStatus, { label: string; color: string; icon: ReactNode }> = {
   idle: { label: '', color: '', icon: null },
   signing: {
     label: 'Signing transaction...',

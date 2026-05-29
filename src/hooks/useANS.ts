@@ -56,7 +56,7 @@ export function useANS() {
         error: null,
       }
     } catch {
-      return { address, primaryName: null, loading: false, error: null }
+      return { address, primaryName: null, loading: false, error: 'Could not reverse resolve .apt name' }
     }
   }, [])
 

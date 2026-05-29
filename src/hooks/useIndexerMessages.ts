@@ -125,11 +125,14 @@ export function useIndexerMessages({ address, limit = 50, enabled = true }: UseI
 export async function checkInboxInitialized(address: string): Promise<boolean> {
   const query = `
     query CheckInbox($address: String!) {
-      current_fungible_asset_balances(
-        where: { owner_address: { _eq: $address } }
+      account_transactions(
+        where: {
+          account_address: { _eq: $address }
+          transaction: { module_address: { _eq: $address } }
+        }
         limit: 1
       ) {
-        owner_address
+        transaction_version
       }
     }
   `
@@ -141,7 +144,7 @@ export async function checkInboxInitialized(address: string): Promise<boolean> {
       body: JSON.stringify({ query, variables: { address } }),
     })
     const result = await response.json()
-    return result.data?.current_fungible_asset_balances?.length > 0 || false
+    return (result.data?.account_transactions?.length || 0) > 0 || false
   } catch {
     return false
   }

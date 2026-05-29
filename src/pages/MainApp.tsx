@@ -1,8 +1,7 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
-import { MessageSquare, Users, Settings, Bell, Moon, Sun, LogOut, User, Shield, Key, Trash2, ChevronLeft, Plus, Circle, Hash, Eye } from 'lucide-react'
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
+import { MessageSquare, Users, Settings, Bell, Moon, Sun, Circle, Plus, Hash } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { useWallet } from '../context/WalletProvider'
 import { toast } from 'sonner'
 import MessageCard, { type Message } from '../components/chat/MessageCard'
 import ChatInput from '../components/chat/ChatInput'
@@ -12,23 +11,32 @@ import { SearchBar, FilterBar } from '../components/chat/SearchBar'
 import { TxStatusIndicator, type TxStatus } from '../components/chat/TxStatusIndicator'
 import ComposeMessageModal from '../components/chat/ComposeMessageModal'
 import ChannelPanel from '../components/chat/ChannelPanel'
-import PremiumMessagingPanel from '../components/chat/PremiumMessagingPanel'
+import DAOChannelChat from '../components/chat/DAOChannelChat'
+import ErrorBoundary from '../components/ErrorBoundary'
+import SettingsPanel from '../components/settings/SettingsPanel'
+import { useAppStore } from '../store/useAppStore'
 import { useContactManager, type Contact } from '../hooks/useContactManager'
 import { EncryptionManager } from '../lib/crypto'
+import { pqEncryptionManager } from '../lib/pqCrypto'
+import { x402Facilitator } from '../lib/x402'
+import { ampMessenger } from '../lib/ampProtocol'
+import { encryptedMempoolClient } from '../lib/encryptedMempool'
+import { useInbox3 } from '../hooks/useInbox3'
+import { useIrysStorage } from '../hooks/useIrysStorage'
+import { useANS } from '../hooks/useANS'
+import { AIAgent } from '../lib/aiAgent'
+import type { Channel } from '../hooks/useTokenGatedChannels'
 
 const encryptionManager = new EncryptionManager()
 
-const initialMessages: Record<string, Message[]> = {
-  'welcome': [
-    { id: 'w1', sender: 'Inbox3 Bot', senderAddress: '0x0000', content: 'Welcome to Inbox3! All messages are end-to-end encrypted.', timestamp: 'Just now', direction: 'received', status: 'confirmed' },
-  ],
-}
 
 export default function MainApp() {
-  const { user, logout } = useAuth()
-  const { signAndSubmit } = useWallet()
+  const { user, initialized } = useAuth()
+  const { sendMessage, fetchMessages } = useInbox3()
+  const { uploadPayload, ephemeralMode, setEphemeralMode } = useIrysStorage()
+  const { reverseResolve } = useANS()
   const navigate = useNavigate()
-  const { contacts, addContact, searchContacts, markRead, updateContact } = useContactManager()
+  const { contacts, addContact, searchContacts, markRead, updateContact, exportContacts, importContacts } = useContactManager()
   const [activeTab, setActiveTab] = useState<'messages' | 'contacts' | 'channels' | 'settings'>('messages')
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
@@ -37,47 +45,217 @@ export default function MainApp() {
   const [showSidebar, setShowSidebar] = useState(true)
   const [txStatus, setTxStatus] = useState<TxStatus>('idle')
   const [showCompose, setShowCompose] = useState(false)
+  const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null)
+  const [usePQ, setUsePQ] = useState(false)
+  const [syncLoading, setSyncLoading] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (!encryptionManager.loadKeys()) {
-      encryptionManager.generateKeys()
+    document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light')
+  }, [darkMode])
+
+  const discoveredRef = useRef<Set<string>>(new Set())
+  const warnedRef = useRef<Set<string>>(new Set())
+  const warnOnce = (key: string, message: string) => {
+    if (!warnedRef.current.has(key)) { warnedRef.current.add(key); toast.warning(message) }
+  }
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (initialized && !user) navigate('/login')
+  }, [user, initialized, navigate])
+
+  // Load persisted messages when selecting a contact
+  const contactId = selectedContact?.id
+  useEffect(() => {
+    if (contactId) {
+      try {
+        const stored = localStorage.getItem(`inbox3_messages_${contactId}`)
+        if (stored) {
+          const parsed = JSON.parse(stored) as Message[]
+          setMessages(parsed)
+        } else {
+          setMessages([])
+        }
+      } catch {
+        setMessages([])
+      }
+    } else {
+      setMessages([])
+    }
+  }, [contactId])
+
+  // Initialize encryption keys on mount
+  useEffect(() => {
+    try {
+      if (!encryptionManager.loadKeys()) {
+        encryptionManager.generateKeys()
+      }
+    } catch {
+      toast.error('Failed to initialize encryption')
     }
   }, [])
 
+  // Real-time synchronization
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+    let mounted = true
+    const address = user?.walletAddress
+    if (!address) return
+
+    const syncMessages = async () => {
+      if (!mounted) return
+      const onchainEvents = await fetchMessages(address)
+      
+      interface OnchainEvent {
+        sender: string; recipient: string; payload_uri: string; timestamp: string
+      }
+      const parsedMessages = await Promise.all(onchainEvents.map(async (evt: OnchainEvent, i: number) => {
+        const isSent = evt.sender === user.walletAddress
+        
+        // Phase 1: Dynamic Contact Sync
+        const otherAddress = isSent ? evt.recipient : evt.sender
+        if (otherAddress && otherAddress !== user.walletAddress && !discoveredRef.current.has(otherAddress)) {
+          discoveredRef.current.add(otherAddress)
+          if (!mounted) return
+          const ansResult = await reverseResolve(otherAddress)
+          const displayName = ansResult.primaryName ? `${ansResult.primaryName}.apt` : undefined
+          addContact(otherAddress, displayName)
+        }
+
+        let finalContent = `[Encrypted Payload: ${evt.payload_uri.slice(0, 10)}]`
+        let isEphemeral = false
+        let msgType: 'text' | 'image' | 'voice' | 'blink' = 'text'
+        let blinkData: Record<string, unknown> | undefined = undefined
+
+        // Phase 2: Live Irys Payload Fetching & Decryption
+        try {
+           const res = await fetch(`https://gateway.irys.xyz/${evt.payload_uri}`)
+           if (res.ok) {
+             const rawEncryptedText = await res.text()
+             const otherPartyPubKey = contacts.find(c => c.address === otherAddress)?.publicKey
+             
+              const localPubKey = encryptionManager.getPublicKey()
+              const resolvedKey = otherPartyPubKey || localPubKey
+              if (resolvedKey) {
+                 try {
+                   let decryptedText: string
+                   if (usePQ && pqEncryptionManager.getPublicKey()) {
+                     decryptedText = encryptionManager.decryptHybrid(rawEncryptedText, resolvedKey)
+                   } else {
+                     decryptedText = encryptionManager.decrypt(rawEncryptedText, resolvedKey)
+                   }
+                   
+                   try {
+                     const json = JSON.parse(decryptedText)
+                     if (json.content !== undefined) {
+                         finalContent = json.content
+                         isEphemeral = !!json.isEphemeral
+                         try {
+                            const innerJson = JSON.parse(finalContent)
+                            if (innerJson.type === 'blink' || innerJson.actions) {
+                                msgType = 'blink'
+                                blinkData = innerJson
+                            }
+                           } catch {
+                              warnOnce(evt.payload_uri, 'Failed to parse blink data from message')
+                           }
+                      } else {
+                          finalContent = decryptedText
+                      }
+                    } catch {
+                       warnOnce(evt.payload_uri, 'Failed to parse decrypted message, showing raw')
+                       finalContent = decryptedText
+                    }
+                  } catch {
+                     warnOnce(evt.payload_uri, 'Failed to decrypt message payload')
+                     finalContent = `[Encrypted]`
+                  }
+               } else {
+                 finalContent = `[Encrypted - Missing Key]`
+              }
+             }
+          } catch {
+             warnOnce(evt.payload_uri, 'Failed to fetch payload from storage')
+             finalContent = `[Storage Fetch Failed]`
+         }
+
+        return {
+          id: `onchain-${evt.payload_uri || `${i}-${evt.timestamp}`}`,
+          sender: isSent ? user.name || 'You' : (contacts.find(c => c.address === evt.sender)?.name || 'Unknown'),
+          senderAddress: evt.sender,
+          content: finalContent,
+          timestamp: new Date(Number(evt.timestamp) / 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          direction: isSent ? 'sent' : 'received',
+          status: 'confirmed',
+          isEphemeral,
+          type: msgType,
+          blinkData,
+          aiTags: (!isSent && msgType === 'text') ? AIAgent.analyzeMessage(finalContent) : undefined
+        } as Message
+      }))
+
+      if (!mounted) return
+      setMessages(prev => {
+        const existingIds = new Set(prev.map(m => m.id))
+        const merged = [...prev]
+        for (const msg of parsedMessages.reverse()) {
+          if (!existingIds.has(msg.id)) {
+            merged.push(msg)
+            existingIds.add(msg.id)
+          }
+        }
+        return merged
+      })
+    }
+
+    const intervalId = setInterval(syncMessages, 5000)
+    syncMessages().finally(() => { if (mounted) setSyncLoading(false) })
+
+    return () => { mounted = false; clearInterval(intervalId) }
+  }, [user, fetchMessages, usePQ, reverseResolve, addContact, contacts])
+
+  const { setSelectedContactId } = useAppStore()
+
+  const handleContactSelect = useCallback((contact: Contact) => {
+    setSelectedContact(contact)
+    setSelectedContactId(contact.id)
+    markRead(contact.id)
+    if (window.innerWidth < 768) setShowSidebar(false)
+  }, [markRead, setSelectedContactId])
 
   const handleSelectContact = useCallback((contact: Contact) => {
-    setSelectedContact(contact)
-    const stored = localStorage.getItem(`inbox3_messages_${contact.id}`)
-    setMessages(stored ? JSON.parse(stored) : initialMessages[contact.id] || [])
-    setTxStatus('idle')
-    markRead(contact.id)
-  }, [markRead])
+    handleContactSelect(contact)
+  }, [handleContactSelect])
 
   const persistMessages = useCallback((contactId: string, msgs: Message[]) => {
     try {
       localStorage.setItem(`inbox3_messages_${contactId}`, JSON.stringify(msgs))
     } catch {
-      // Storage not available
+      toast.warning('Could not save messages locally')
     }
   }, [])
 
-  const handleSend = useCallback(async (content: string, type: 'text' | 'image' | 'voice') => {
+  const handleSend = useCallback(async (content: string, type: 'text' | 'image' | 'voice' | 'blink', blinkData?: Record<string, unknown>) => {
     if (!selectedContact) return
 
     setTxStatus('signing')
     const tempId = Date.now().toString()
     const recipientPubKey = selectedContact.publicKey || encryptionManager.getPublicKey()
-    let encryptedContent = content
+    
+    const payloadObj = { content, isEphemeral: ephemeralMode }
+    const rawPayload = JSON.stringify(payloadObj)
+    let encryptedContent = rawPayload
 
     if (type === 'text' && recipientPubKey) {
       try {
-        encryptedContent = encryptionManager.encrypt(content, recipientPubKey)
+        if (usePQ && pqEncryptionManager.getPublicKey()) {
+          encryptedContent = encryptionManager.encryptHybrid(rawPayload, recipientPubKey)
+        } else {
+          encryptedContent = encryptionManager.encrypt(rawPayload, recipientPubKey)
+        }
       } catch {
-        encryptedContent = `[encrypted] ${content}`
+        toast.warning('Encryption failed, sending raw payload')
+        encryptedContent = rawPayload
       }
     }
 
@@ -85,23 +263,64 @@ export default function MainApp() {
       id: tempId,
       sender: 'You',
       senderAddress: user?.walletAddress || '0xme',
-      content: encryptedContent,
+      content: content,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       direction: 'sent',
       status: 'mempool',
       type,
+      isEphemeral: ephemeralMode,
+      blinkData
     }
 
     const updated = [...messages, tempMsg]
     setMessages(updated)
     persistMessages(selectedContact.id, updated)
 
-    const toastId = toast.loading('Signing transaction...')
+    const toastId = toast.loading(ephemeralMode ? 'Uploading ephemeral key & payload...' : 'Signing transaction...')
 
     try {
       setTxStatus('submitting')
-      toast.loading('Submitting to Aptos testnet...', { id: toastId })
-      const hash = await signAndSubmit({ content: encryptedContent, recipient: selectedContact.address })
+      
+      toast.loading(ephemeralMode ? 'Generating Burnable Key...' : 'Uploading payload to Irys...', { id: toastId })
+      const irysReceiptId = await uploadPayload(encryptedContent)
+      
+      if (!irysReceiptId) {
+        throw new Error('Irys upload failed')
+      }
+
+      let x402Config = { x402Enabled: false }
+      try {
+        x402Config = JSON.parse(localStorage.getItem('inbox3_stake_config') || '{}')
+      } catch { /* invalid config, defaults to disabled */ }
+      if (x402Config.x402Enabled) {
+        await x402Facilitator.requestPayment('0.01', selectedContact.address, tempId)
+      }
+
+      if (content.startsWith('[AMP]')) {
+        const userAddress = user?.walletAddress || '0xuser'
+        const envelope = ampMessenger.createEnvelope(
+          userAddress, 'human',
+          selectedContact.address, 'agent',
+          content.replace('[AMP] ', ''),
+          'text', 'request', true,
+        )
+        try { localStorage.setItem(`inbox3_amp_sent_${tempId}`, ampMessenger.serializeEnvelope(envelope)) } catch { /* storage full */ }
+      }
+
+      if (encryptedMempoolClient.isInitialized()) {
+        const mempoolPayload = await encryptedMempoolClient.encryptForMempool(
+          encryptedContent,
+          selectedContact.publicKey || encryptionManager.getPublicKey() || '',
+        )
+        const submission = await encryptedMempoolClient.createMempoolSubmission(
+          mempoolPayload,
+          selectedContact.address,
+        )
+        encryptedMempoolClient.queueSubmission(submission)
+      }
+
+      toast.loading(`Awaiting signature (Stake: 100 APT)...`, { id: toastId })
+      const hash = await sendMessage(selectedContact.address, irysReceiptId, 100)
 
       if (hash) {
         const confirmed = messages.map(m =>
@@ -110,18 +329,12 @@ export default function MainApp() {
         setMessages(confirmed)
         persistMessages(selectedContact.id, confirmed)
         setTxStatus('confirmed')
-        toast.success('Message sent on-chain', {
+        toast.success(ephemeralMode ? 'Ephemeral Message sent on-chain' : 'Message sent on-chain', {
           id: toastId,
-          description: `Tx: ${hash.slice(0, 10)}...${hash.slice(-6)}`,
+          description: `Tx: ${hash.slice(0, 10)}...${hash.slice(-6)} | Irys: ${irysReceiptId.slice(0,10)}...`,
         })
       } else {
-        const failed = messages.map(m =>
-          m.id === tempId ? { ...m, status: 'failed' as const } : m
-        )
-        setMessages(failed)
-        persistMessages(selectedContact.id, failed)
-        setTxStatus('failed')
-        toast.error('Transaction failed', { id: toastId })
+        throw new Error('Transaction rejected or failed')
       }
     } catch (err) {
       const failed = messages.map(m =>
@@ -135,7 +348,7 @@ export default function MainApp() {
     }
 
     setTimeout(() => setTxStatus('idle'), 3000)
-  }, [selectedContact, messages, user, signAndSubmit, persistMessages])
+  }, [selectedContact, messages, user, sendMessage, persistMessages, usePQ, uploadPayload, ephemeralMode])
 
   const handleComposeSend = useCallback((address: string, name: string, message: string, publicKey?: string) => {
     const contact = addContact(address, name)
@@ -157,7 +370,10 @@ export default function MainApp() {
 
     updateContact(contact.id, { lastMessage: message, timestamp: 'Just now' })
 
-    const existing = JSON.parse(localStorage.getItem(`inbox3_messages_${contact.id}`) || '[]')
+    let existing: Message[] = []
+    try {
+      existing = JSON.parse(localStorage.getItem(`inbox3_messages_${contact.id}`) || '[]')
+    } catch { /* corrupted data, start fresh */ }
     existing.push(msg)
     persistMessages(contact.id, existing)
 
@@ -185,12 +401,7 @@ export default function MainApp() {
     })
   }, [selectedContact, persistMessages])
 
-  const handleLogout = () => {
-    logout()
-    navigate('/login')
-  }
-
-  const filteredContacts = searchContacts(searchQuery)
+  const filteredContacts = useMemo(() => searchContacts(searchQuery), [searchContacts, searchQuery])
 
   return (
     <div className="flex h-screen w-full bg-black/80 backdrop-blur-xl text-white overflow-hidden">
@@ -204,10 +415,10 @@ export default function MainApp() {
               <span className="text-lg font-semibold tracking-tight">Inbox3</span>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-lg hover:bg-white/5 transition-colors">
+              <button onClick={() => setDarkMode(!darkMode)} aria-label="Toggle dark mode" className="p-2 rounded-lg hover:bg-white/5 transition-colors">
                 {darkMode ? <Sun className="w-4 h-4 text-white/60" /> : <Moon className="w-4 h-4 text-white/60" />}
               </button>
-              <button className="p-2 rounded-lg hover:bg-white/5 transition-colors relative">
+              <button type="button" aria-label="Notifications" onClick={() => toast.info('Notifications coming soon')} className="p-2 rounded-lg hover:bg-white/5 transition-colors relative">
                 <Bell className="w-4 h-4 text-white/60" />
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#FF6B35] rounded-full" />
               </button>
@@ -239,7 +450,9 @@ export default function MainApp() {
           ))}
         </div>
 
-        <FilterBar onFilter={() => {}} />
+        <FilterBar onFilter={(filter) => {
+          if (filter === 'all') setSearchQuery('')
+        }} />
 
         <div className="flex-1 flex flex-col overflow-hidden">
           {activeTab === 'messages' && (
@@ -250,30 +463,84 @@ export default function MainApp() {
             <div className="p-4 space-y-2 overflow-y-auto flex-1">
               <div className="flex items-center justify-between mb-4">
                 <p className="text-sm text-white/40">Your decentralized contacts</p>
-                <button
-                  onClick={() => setShowCompose(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FF6B35] text-white text-xs font-medium hover:opacity-90 transition-all"
-                >
-                  <Plus className="w-3 h-3" />
-                  Add Contact
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      const json = exportContacts()
+                      const blob = new Blob([json], { type: 'application/json' })
+                      const url = URL.createObjectURL(blob)
+                      const a = document.createElement('a')
+                      a.href = url
+                      a.download = `inbox3-contacts-${Date.now()}.json`
+                      a.click()
+                      URL.revokeObjectURL(url)
+                      toast.success('Contacts exported')
+                    }}
+                    className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/5 text-white/60 text-xs font-medium hover:bg-white/10 transition-all"
+                    title="Export contacts"
+                  >
+                    ↥
+                  </button>
+                  <label className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/5 text-white/60 text-xs font-medium hover:bg-white/10 transition-all cursor-pointer" title="Import contacts">
+                    ↧
+                    <input
+                      type="file"
+                      accept=".json"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (!file) return
+                        const reader = new FileReader()
+                        reader.onload = () => {
+                          const result = importContacts(reader.result as string)
+                          if (result.imported > 0) {
+                            toast.success(`Imported ${result.imported} contact(s)`)
+                          }
+                          if (result.skipped > 0) {
+                            toast.info(`${result.skipped} duplicate(s) skipped`)
+                          }
+                          if (result.imported === 0 && result.skipped === 0) {
+                            toast.error('Invalid contact file')
+                          }
+                        }
+                        reader.readAsText(file)
+                        e.target.value = ''
+                      }}
+                    />
+                  </label>
+                  <button
+                    onClick={() => setShowCompose(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FF6B35] text-white text-xs font-medium hover:opacity-90 transition-all"
+                  >
+                    <Plus className="w-3 h-3" />
+                    Add Contact
+                  </button>
+                </div>
               </div>
-              {contacts.map((contact) => (
-                <button
-                  key={contact.id}
-                  onClick={() => handleSelectContact(contact)}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors text-left"
-                >
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#A855F7] to-[#FF6B35] flex items-center justify-center text-sm font-medium">
-                    {contact.avatar}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white truncate">{contact.name}</p>
-                    <p className="text-xs text-white/30 font-mono truncate">{contact.address}</p>
-                  </div>
-                  <span className="w-2 h-2 bg-white/20 rounded-full" />
-                </button>
-              ))}
+              {contacts.map((contact) => {
+                const isAName = contact.name.endsWith('.apt')
+                return (
+                  <button
+                    key={contact.id}
+                    onClick={() => handleSelectContact(contact)}
+                    className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors text-left"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#A855F7] to-[#FF6B35] flex items-center justify-center text-sm font-medium">
+                      {contact.avatar}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-medium text-white truncate">{contact.name}</p>
+                        {isAName && (
+                          <span className="px-1 py-0.5 bg-[#FF6B35]/20 text-[#FF6B35] text-[8px] font-mono rounded flex-shrink-0">ANS</span>
+                        )}
+                      </div>
+                      <p className="text-xs text-white/30 font-mono truncate">{contact.address}</p>
+                    </div>
+                    <span className="w-2 h-2 bg-white/20 rounded-full" />
+                  </button>
+                )
+              })}
               {contacts.length === 0 && (
                 <p className="text-center text-sm text-white/20 py-8">No contacts yet. Compose a new message to add one.</p>
               )}
@@ -282,44 +549,20 @@ export default function MainApp() {
 
           {activeTab === 'channels' && (
             <div className="overflow-y-auto flex-1">
-              <ChannelPanel />
+              <ErrorBoundary fallback={<div className="p-4 text-sm text-white/40">Channel panel unavailable</div>}>
+                <ChannelPanel onSelectChannel={(c) => {
+                  setSelectedChannel(c)
+                  setSelectedContact(null)
+                  setShowSidebar(false)
+                }} />
+              </ErrorBoundary>
             </div>
           )}
 
           {activeTab === 'settings' && (
-            <div className="overflow-y-auto flex-1">
-              <div className="p-4 space-y-1">
-                <div className="border-b border-white/[0.04] pb-3 mb-3">
-                  <PremiumMessagingPanel />
-                </div>
-                {[
-                  { icon: User, label: 'Profile', desc: 'Edit your identity' },
-                  { icon: Bell, label: 'Notifications', desc: 'Manage alerts' },
-                  { icon: Shield, label: 'Privacy', desc: 'End-to-end encryption' },
-                  { icon: Key, label: 'Keys', desc: 'NaCl box keypair' },
-                  { icon: Eye, label: 'ZK Privacy', desc: 'Anonymous ephemeral keys' },
-                  { icon: Trash2, label: 'Clear Data', desc: 'Remove local data' },
-                ].map((item) => (
-                  <button
-                    key={item.label}
-                    className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors text-left"
-                  >
-                    <item.icon className="w-4 h-4 text-white/40" />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-white">{item.label}</p>
-                      <p className="text-xs text-white/30">{item.desc}</p>
-                    </div>
-                    <ChevronLeft className="w-4 h-4 text-white/20 rotate-180" />
-                  </button>
-                ))}
-                <div className="pt-4 mt-4 border-t border-white/5">
-                  <button onClick={handleLogout} className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors text-left text-red-400">
-                    <LogOut className="w-4 h-4" />
-                    <span className="text-sm font-medium">Disconnect</span>
-                  </button>
-                </div>
-              </div>
-            </div>
+            <ErrorBoundary fallback={<div className="p-4 text-sm text-white/40">Settings unavailable</div>}>
+              <SettingsPanel usePQ={usePQ} setUsePQ={setUsePQ} />
+            </ErrorBoundary>
           )}
         </div>
 
@@ -342,25 +585,46 @@ export default function MainApp() {
       </aside>
 
       <div className="flex-1 flex flex-col relative z-10 bg-black/30">
-        {selectedContact ? (
-          <>
+        {selectedChannel ? (
+          <ErrorBoundary fallback={<div className="flex-1 flex items-center justify-center p-8 text-white/40">Channel chat unavailable</div>}>
+            <DAOChannelChat 
+              channel={selectedChannel} 
+              onBack={() => { setShowSidebar(true); setSelectedChannel(null) }} 
+            />
+          </ErrorBoundary>
+        ) : selectedContact ? (
+          <ErrorBoundary fallback={<div className="flex-1 flex items-center justify-center p-8 text-white/40">Conversation unavailable</div>}>
             <ChatHeader contact={selectedContact} onBack={() => { setShowSidebar(true); setSelectedContact(null) }} />
 
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
-              {messages.map((msg, i) => (
-                <MessageCard
-                  key={msg.id}
-                  message={msg}
-                  onReact={handleReact}
-                  isLast={i === messages.length - 1}
-                />
-              ))}
+              {syncLoading && messages.length === 0 ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-8 h-8 border-2 border-white/20 border-t-[#FF6B35] rounded-full animate-spin" />
+                    <p className="text-sm text-white/40">Loading messages...</p>
+                  </div>
+                </div>
+              ) : (
+                messages.map((msg, i) => (
+                  <MessageCard
+                    key={msg.id}
+                    message={msg}
+                    onReact={handleReact}
+                    isLast={i === messages.length - 1}
+                  />
+                ))
+              )}
               <div ref={messagesEndRef} />
             </div>
 
             <TxStatusIndicator status={txStatus} />
-            <ChatInput onSend={handleSend} disabled={txStatus === 'signing' || txStatus === 'submitting'} />
-          </>
+            <ChatInput 
+              onSend={handleSend} 
+              disabled={txStatus === 'signing' || txStatus === 'submitting'} 
+              isEphemeral={ephemeralMode}
+              onToggleEphemeral={() => setEphemeralMode(!ephemeralMode)}
+            />
+          </ErrorBoundary>
         ) : (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center max-w-sm">

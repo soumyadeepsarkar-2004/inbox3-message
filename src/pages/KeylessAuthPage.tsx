@@ -3,6 +3,7 @@ import { ArrowRight, Shield } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { toast } from 'sonner'
+import { CDN_URLS } from '../constants'
 
 export default function KeylessAuthPage() {
   const { connectWithGoogle, connectWithApple, connectWithPasskey, loading } = useAuth()
@@ -41,7 +42,7 @@ export default function KeylessAuthPage() {
       <div className="hidden lg:flex relative flex-col items-center justify-end pb-32 px-12 rounded-3xl overflow-hidden shadow-2xl h-full w-[52%]">
         <video autoPlay muted loop playsInline className="absolute inset-0 w-full h-full object-cover">
           <source
-            src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260506_081238_406ed0e3-5d83-436e-a512-0bbff7ec5b95.mp4"
+            src={CDN_URLS.heroVideo}
             type="video/mp4"
           />
         </video>

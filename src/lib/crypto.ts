@@ -1,5 +1,8 @@
 import nacl from 'tweetnacl'
 import { encodeBase64, decodeBase64, encodeUTF8, decodeUTF8 } from 'tweetnacl-util'
+import { pqEncryptionManager } from './pqCrypto'
+
+const RATCHET_KEY = 'inbox3_double_ratchet'
 
 export class EncryptionManager {
   private keyPair: nacl.BoxKeyPair | null = null
@@ -9,6 +12,7 @@ export class EncryptionManager {
     const publicKey = encodeBase64(this.keyPair.publicKey)
     const secretKey = encodeBase64(this.keyPair.secretKey)
     this.persistKeys(publicKey, secretKey)
+    pqEncryptionManager.generateKeys()
     return { publicKey, secretKey }
   }
 
@@ -20,6 +24,7 @@ export class EncryptionManager {
         publicKey: decodeBase64(publicKey),
         secretKey: decodeBase64(secretKey)
       }
+      pqEncryptionManager.loadKeys()
       return true
     }
     return false
@@ -45,6 +50,14 @@ export class EncryptionManager {
     return encodeUTF8(decrypted)
   }
 
+  encryptHybrid(message: string, recipientPublicKey: string): string {
+    return pqEncryptionManager.encrypt(message, recipientPublicKey)
+  }
+
+  decryptHybrid(encryptedData: string, senderPublicKey: string): string {
+    return pqEncryptionManager.decrypt(encryptedData, senderPublicKey)
+  }
+
   private persistKeys(publicKey: string, secretKey: string): void {
     localStorage.setItem('inbox3_public_key', publicKey)
     localStorage.setItem('inbox3_secret_key', secretKey)
@@ -54,10 +67,20 @@ export class EncryptionManager {
     this.keyPair = null
     localStorage.removeItem('inbox3_public_key')
     localStorage.removeItem('inbox3_secret_key')
+    localStorage.removeItem(RATCHET_KEY)
+    pqEncryptionManager.clearKeys()
   }
 
   getPublicKey(): string | null {
     return this.keyPair ? encodeBase64(this.keyPair.publicKey) : null
+  }
+
+  hasRatchet(): boolean {
+    return pqEncryptionManager.hasRatchet()
+  }
+
+  initRatchet(remotePublicKey: string): void {
+    pqEncryptionManager.initRatchet(remotePublicKey)
   }
 }
 

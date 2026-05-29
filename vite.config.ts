@@ -1,16 +1,28 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { nodePolyfills } from 'vite-plugin-node-polyfills'
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(), 
+    tailwindcss(),
+    nodePolyfills({
+      include: ['stream', 'crypto', 'events', 'util', 'path', 'os', 'fs', 'readline', 'tty', 'assert', 'vm'],
+      globals: {
+        Buffer: true,
+        global: true,
+        process: true,
+      },
+    }),
+  ],
   optimizeDeps: {
     include: ['@aptos-labs/ts-sdk', '@aptos-labs/wallet-adapter-react', 'tweetnacl'],
     esbuildOptions: { target: 'esnext' }
   },
   build: {
     target: 'esnext',
-    chunkSizeWarningLimit: 1500,
+    chunkSizeWarningLimit: 2100,
     commonjsOptions: { transformMixedEsModules: true, include: [/node_modules/] },
     rollupOptions: {
       output: {

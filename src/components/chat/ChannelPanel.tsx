@@ -3,7 +3,7 @@ import { Hash, Plus, Check, Lock, Users, Trash2 } from 'lucide-react'
 import { useTokenGatedChannels, type Channel } from '../../hooks/useTokenGatedChannels'
 import { toast } from 'sonner'
 
-export default function ChannelPanel() {
+export default function ChannelPanel({ onSelectChannel }: { onSelectChannel: (c: Channel) => void }) {
   const { channels, createChannel, removeChannel } = useTokenGatedChannels()
   const [showCreate, setShowCreate] = useState(false)
   const [name, setName] = useState('')
@@ -114,7 +114,8 @@ export default function ChannelPanel() {
         {channels.map((channel: Channel) => (
           <div
             key={channel.id}
-            className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:border-white/[0.08] transition-colors"
+            onClick={() => onSelectChannel(channel)}
+            className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:border-white/[0.08] transition-colors cursor-pointer"
           >
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0">
@@ -140,7 +141,8 @@ export default function ChannelPanel() {
                 </div>
               </div>
               <button
-                onClick={() => { removeChannel(channel.id); toast.info('Channel removed') }}
+                onClick={(e) => { e.stopPropagation(); removeChannel(channel.id); toast.info('Channel removed') }}
+                aria-label="Remove channel"
                 className="p-1.5 rounded-lg hover:bg-white/5 transition-colors"
               >
                 <Trash2 className="w-3 h-3 text-white/20 hover:text-red-400 transition-colors" />

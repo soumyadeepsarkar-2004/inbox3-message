@@ -19,6 +19,7 @@ export function SearchBar({ value, onChange, placeholder = 'Search...' }: Search
       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
       <input
         type="text"
+        aria-label="Search"
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -29,6 +30,7 @@ export function SearchBar({ value, onChange, placeholder = 'Search...' }: Search
       {value && (
         <button
           onClick={() => onChange('')}
+          aria-label="Clear search"
           className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
         >
           ×

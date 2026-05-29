@@ -33,7 +33,6 @@ async function getAptos(): Promise<AptosClient> {
         network = Network.LOCAL
         break
       default:
-        console.warn(`Unrecognized VITE_APTOS_NETWORK "${envNetwork}", falling back to Testnet`)
         network = Network.TESTNET
     }
 
@@ -211,33 +210,25 @@ export function useKeylessAuth() {
   }, [])
 
   const signInWithGithub = useCallback(async () => {
-    try {
-      toast.loading('Redirecting to GitHub sign-in...')
+    toast.loading('Redirecting to GitHub sign-in...')
 
-      const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID
-      if (!clientId) {
-        throw new Error('GitHub Client ID not configured')
-      }
-
-      const redirectUri = `${window.location.origin}/auth/github/callback`
-      const state = crypto.randomUUID()
-      sessionStorage.setItem('github_oauth_state', state)
-
-      const url = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&scope=read:user+user:email`
-
-      window.location.href = url
-
-      await new Promise(() => {})
-    } catch (err) {
+    const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID
+    if (!clientId) {
       toast.dismiss()
-      const message = err instanceof Error ? err.message : 'GitHub sign-in failed'
-      toast.error('Authentication failed', { description: message })
-      throw err
+      throw new Error('GitHub Client ID not configured')
     }
+
+    const redirectUri = `${window.location.origin}/auth/github/callback`
+    const state = crypto.randomUUID()
+    try { sessionStorage.setItem('github_oauth_state', state) } catch { /* private browsing */ }
+
+    const url = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&scope=read:user+user:email`
+
+    window.location.href = url
   }, [])
 
   const signOut = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEY)
+    try { localStorage.removeItem(STORAGE_KEY) } catch { /* private browsing */ }
     toast.info('Signed out')
   }, [])
 
@@ -276,27 +267,31 @@ async function getGoogleJwt(): Promise<string> {
         return
       }
 
-      const oauth2 = (accounts.oauth2 as Record<string, unknown>) || {}
-      const initTokenClient = oauth2.initTokenClient as ((config: Record<string, unknown>) => void) | undefined
+      const idConfig = (accounts.id as Record<string, unknown>) || {}
+      const initialize = idConfig.initialize as ((config: Record<string, unknown>) => void) | undefined
+      const renderButton = idConfig.renderButton as ((parent: HTMLElement, config: Record<string, unknown>) => void) | undefined
 
-      if (!initTokenClient) {
-        reject(new Error('Failed to initialize Google OAuth'))
+      if (!initialize || !renderButton) {
+        reject(new Error('Failed to initialize Google Identity Services'))
         return
       }
 
-      const tokenClient = initTokenClient({
+      initialize({
         client_id: clientId,
-        scope: 'openid profile email',
         callback: (response: Record<string, string | undefined>) => {
-          if (response.access_token) {
-            resolve(response.access_token)
+          if (response.credential) {
+            resolve(response.credential)
           } else {
             reject(new Error('Google authentication failed'))
           }
         },
       })
 
-      void tokenClient
+      const picker = document.createElement('div')
+      picker.style.display = 'none'
+      document.body.appendChild(picker)
+      renderButton(picker, { theme: 'outline', size: 'large', type: 'standard' } as Record<string, unknown>)
+      picker.querySelector('button')?.click()
     }
     script.onerror = () => reject(new Error('Failed to load Google SDK'))
     document.head.appendChild(script)

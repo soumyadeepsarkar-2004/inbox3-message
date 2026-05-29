@@ -1,8 +1,9 @@
 import { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { Circle, Camera, Upload, User, Check } from 'lucide-react'
+import { Camera, Upload, User, Check } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { toast } from 'sonner'
 
 export default function ProfilePage() {
   const [name, setName] = useState('')
@@ -24,14 +25,18 @@ export default function ProfilePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name) return
-    await finalizeProfile({ name, bio: bio || undefined, avatar: avatar || undefined })
-    navigate('/app')
+    try {
+      await finalizeProfile({ name, bio: bio || undefined, avatar: avatar || undefined })
+      navigate('/app')
+    } catch {
+      toast.error('Failed to save profile')
+    }
   }
 
   const displayName = user?.name || user?.email?.split('@')[0] || 'User'
 
   return (
-    <main className="min-h-screen bg-black text-white selection:bg-white/30 p-4 lg:p-8">
+    <main className="min-h-screen bg-[#F5F5F5] text-black selection:bg-black/10 p-4 lg:p-8">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <motion.div
@@ -40,13 +45,13 @@ export default function ProfilePage() {
           className="flex items-center justify-between mb-12"
         >
           <div className="flex items-center gap-2">
-            <Circle className="fill-white text-white w-5 h-5" />
-            <span className="text-lg font-semibold tracking-tight">Inbox3</span>
+            <div className="w-6 h-6 rounded bg-black flex items-center justify-center text-xs font-bold text-white shadow-sm">i3</div>
+            <span className="text-lg font-semibold tracking-tight text-black">Inbox3</span>
           </div>
-          <div className="flex items-center gap-2 text-white/40 text-sm">
+          <div className="flex items-center gap-2 text-black/40 text-sm">
             <span>Step 3 of 3</span>
-            <div className="w-16 h-1 bg-white/10 rounded-full overflow-hidden">
-              <div className="w-full h-full bg-gradient-brand rounded-full" />
+            <div className="w-16 h-1 bg-black/10 rounded-full overflow-hidden">
+              <div className="w-full h-full bg-black rounded-full" />
             </div>
           </div>
         </motion.div>
@@ -56,11 +61,11 @@ export default function ProfilePage() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="space-y-8"
+          className="space-y-8 bg-white p-8 sm:p-12 rounded-[2rem] shadow-sm border border-black/5"
         >
           <div className="text-center space-y-2">
             <h1 className="text-3xl font-medium tracking-tight">Finalize Your Profile</h1>
-            <p className="text-white/50">Complete your identity to start messaging</p>
+            <p className="text-black/50">Complete your identity to start messaging</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -69,16 +74,16 @@ export default function ProfilePage() {
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="relative w-32 h-32 rounded-full bg-brand-gray flex items-center justify-center cursor-pointer overflow-hidden group"
+                className="relative w-32 h-32 rounded-full bg-[#F5F5F5] border border-black/10 flex items-center justify-center cursor-pointer overflow-hidden group shadow-sm"
                 onClick={() => fileInputRef.current?.click()}
               >
                 {avatar ? (
                   <img src={avatar} alt="Avatar" className="w-full h-full object-cover" />
                 ) : (
-                  <User className="w-12 h-12 text-white/30" />
+                  <User className="w-12 h-12 text-black/20" />
                 )}
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <Camera className="w-6 h-6 text-white" />
+                <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <Camera className="w-6 h-6 text-black/50" />
                 </div>
               </motion.div>
               <input
@@ -91,7 +96,7 @@ export default function ProfilePage() {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors"
+                className="flex items-center gap-2 text-sm text-black/50 hover:text-black transition-colors"
               >
                 <Upload className="w-4 h-4" />
                 Upload Avatar
@@ -100,38 +105,38 @@ export default function ProfilePage() {
 
             {/* Name Input */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-white">Display Name</label>
+              <label className="text-sm font-medium text-black/80">Display Name</label>
               <input
                 type="text"
                 placeholder={displayName}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full bg-brand-gray border-none rounded-xl h-12 px-4 text-white placeholder:text-white/30 focus:ring-2 focus:ring-white/20 focus:outline-none transition-all duration-200"
+                className="w-full bg-[#F5F5F5] border border-black/5 rounded-xl h-12 px-4 text-black placeholder:text-black/30 focus:ring-2 focus:ring-black/10 focus:border-black/20 focus:outline-none transition-all duration-200"
                 required
               />
             </div>
 
             {/* Bio Input */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-white">Bio <span className="text-white/30">(optional)</span></label>
+              <label className="text-sm font-medium text-black/80">Bio <span className="text-black/30">(optional)</span></label>
               <textarea
                 placeholder="Tell others about yourself..."
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
                 rows={3}
-                className="w-full bg-brand-gray border-none rounded-xl p-4 text-white placeholder:text-white/30 focus:ring-2 focus:ring-white/20 focus:outline-none transition-all duration-200 resize-none"
+                className="w-full bg-[#F5F5F5] border border-black/5 rounded-xl p-4 text-black placeholder:text-black/30 focus:ring-2 focus:ring-black/10 focus:border-black/20 focus:outline-none transition-all duration-200 resize-none"
               />
-              <p className="text-xs text-white/30">{bio.length}/160 characters</p>
+              <p className="text-xs text-black/40">{bio.length}/160 characters</p>
             </div>
 
             {/* Submit Button */}
             <button
               type="submit"
               disabled={loading || !name}
-              className="w-full h-14 bg-white text-black font-semibold rounded-xl hover:bg-white/90 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full h-14 bg-black text-white font-semibold rounded-xl hover:bg-black/90 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
             >
               {loading ? (
-                <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
                   Complete Setup
@@ -144,7 +149,7 @@ export default function ProfilePage() {
             <button
               type="button"
               onClick={() => navigate('/app')}
-              className="w-full text-center text-sm text-white/40 hover:text-white/60 transition-colors"
+              className="w-full text-center text-sm text-black/40 hover:text-black/60 transition-colors"
             >
               Skip for now
             </button>

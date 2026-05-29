@@ -1,4 +1,6 @@
 import { useState, useCallback } from 'react'
+import nacl from 'tweetnacl'
+import { encodeBase64 } from 'tweetnacl-util'
 
 interface EpochalKey {
   publicKey: string
@@ -20,11 +22,9 @@ export function useAnonymousMessaging() {
 
   const generateEpochalKey = useCallback(async (): Promise<EpochalKey | null> => {
     try {
-      const nacl = await import('tweetnacl')
-      const { encodeBase64, encodeUTF8 } = await import('tweetnacl-util')
       const keyPair = nacl.box.keyPair()
       const hashBytes = nacl.hash(keyPair.publicKey)
-      const commitment = encodeUTF8(hashBytes.slice(0, 16))
+      const commitment = encodeBase64(hashBytes.slice(0, 16))
 
       const epochal: EpochalKey = {
         publicKey: encodeBase64(keyPair.publicKey),

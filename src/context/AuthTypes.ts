@@ -17,6 +17,7 @@ export interface User {
 export interface AuthContextType {
   user: User | null
   loading: boolean
+  initialized: boolean
   step: 'signup' | 'login' | 'wallet' | 'profile' | 'keyless'
   setStep: (step: 'signup' | 'login' | 'wallet' | 'profile' | 'keyless') => void
   signupWithEmail: (email: string, password: string, name: string) => Promise<void>
