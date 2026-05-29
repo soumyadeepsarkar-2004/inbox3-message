@@ -149,7 +149,7 @@ module inbox3::attention_market {
         encrypted_amount: vector<u8>,
         commitment: vector<u8>,
         stake_amount: u64,
-    ) acquires Inbox {
+    ) acquires ConfidentialPayment {
         let sender_addr = std::signer::address_of(sender);
         assert!(exists<Inbox>(recipient), E_INBOX_NOT_INITIALIZED);
 
