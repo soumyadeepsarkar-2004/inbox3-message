@@ -118,8 +118,10 @@ module inbox3_addr::inbox3 {
     fun test_initialize_and_send() {
         use aptos_framework::account;
 
-        let (sender, sender_addr) = account::create_account_for_test(@0xAA);
-        let (recipient, recipient_addr) = account::create_account_for_test(@0xBB);
+        let sender = account::create_account_for_test(@0xAA);
+        let sender_addr = @0xAA;
+        let recipient = account::create_account_for_test(@0xBB);
+        let recipient_addr = @0xBB;
 
         initialize_inbox(&recipient, b"test_public_key");
         assert!(get_message_count(recipient_addr) == 0, 1);
@@ -133,8 +135,9 @@ module inbox3_addr::inbox3 {
     fun test_delete_message() {
         use aptos_framework::account;
 
-        let (sender, _sender_addr) = account::create_account_for_test(@0xCC);
-        let (recipient, recipient_addr) = account::create_account_for_test(@0xDD);
+        let sender = account::create_account_for_test(@0xCC);
+        let recipient = account::create_account_for_test(@0xDD);
+        let recipient_addr = @0xDD;
 
         initialize_inbox(&recipient, b"pub_key");
         send_message(&sender, recipient_addr, b"msg1");
@@ -148,7 +151,8 @@ module inbox3_addr::inbox3 {
     fun test_get_public_key() {
         use aptos_framework::account;
 
-        let (recipient, recipient_addr) = account::create_account_for_test(@0xEE);
+        let recipient = account::create_account_for_test(@0xEE);
+        let recipient_addr = @0xEE;
 
         initialize_inbox(&recipient, b"my_public_key_data");
         let pub_key = get_public_key(recipient_addr);
