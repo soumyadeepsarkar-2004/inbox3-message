@@ -9,6 +9,7 @@ module inbox3_addr::inbox3 {
         initialized: bool,
     }
 
+    #[event]
     struct MessageSentEvent has drop, store {
         sender: address,
         recipient: address,
@@ -16,6 +17,7 @@ module inbox3_addr::inbox3 {
         timestamp: u64,
     }
 
+    #[event]
     struct InboxInitializedEvent has drop, store {
         account: address,
         public_key: vector<u8>,
