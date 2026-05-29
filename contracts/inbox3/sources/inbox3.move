@@ -168,6 +168,6 @@ module inbox3_addr::inbox3 {
         initialize_inbox(&recipient, b"my_public_key_data");
         let inbox = borrow_global<Inbox>(recipient_addr);
         let pub_key = get_public_key(inbox);
-        assert!(vector::length(pub_key) == 19, 1);
+        assert!(vector::length(pub_key) == 18, 1);
     }
 }
