@@ -93,17 +93,17 @@ module inbox3_addr::inbox3 {
 
     public fun get_public_key(account: address): vector<u8> acquires Inbox {
         assert!(exists<Inbox>(account), 501);
-        *borrow_global<Inbox>(account).public_key
+        borrow_global<Inbox>(account).public_key
     }
 
     public fun get_messages(account: address): vector<vector<u8>> acquires MessageStore {
         assert!(exists<MessageStore>(account), 601);
-        *borrow_global<MessageStore>(account).messages
+        borrow_global<MessageStore>(account).messages
     }
 
     public fun get_message_senders(account: address): vector<address> acquires MessageStore {
         assert!(exists<MessageStore>(account), 701);
-        *borrow_global<MessageStore>(account).senders
+        borrow_global<MessageStore>(account).senders
     }
 
     public entry fun delete_message(account: &signer, index: u64) acquires MessageStore {
