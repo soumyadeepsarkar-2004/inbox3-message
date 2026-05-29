@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  APTOS_CLI_VERSION: 7.4.0
+
 jobs:
   test-frontend:
     runs-on: ubuntu-latest
@@ -15,7 +18,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-      - run: npm ci
+      - run: npm ci --legacy-peer-deps
       - run: npm run lint
       - run: npm run build
 
@@ -23,8 +26,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: aptos-labs/setup-aptos-cli@v1
-      - run: cd contracts/inbox3 && aptos move test
+      - name: Install Aptos CLI
+        run: |
+          curl -fsSL "https://aptos.dev/scripts/install_cli.sh" | sh
+          echo "$HOME/bin" >> $GITHUB_PATH
+      - name: Test inbox3 contract
+        run: |
+          cd contracts/inbox3
+          aptos move test
+      - name: Test attention_market contract
+        run: |
+          cd contracts
+          aptos move test
 
   deploy-testnet:
     needs: [test-frontend, test-move]
@@ -32,8 +45,12 @@ jobs:
     if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
-      - uses: aptos-labs/setup-aptos-cli@v1
-      - run: |
+      - name: Install Aptos CLI
+        run: |
+          curl -fsSL "https://aptos.dev/scripts/install_cli.sh" | sh
+          echo "$HOME/bin" >> $GITHUB_PATH
+      - name: Publish to testnet
+        run: |
           cd contracts/inbox3
           aptos move compile --named-addresses inbox3_addr=default
           aptos move publish --named-addresses inbox3_addr=default --private-key ${{ secrets.APTOS_PRIVATE_KEY }} --assume-yes

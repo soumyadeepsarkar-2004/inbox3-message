@@ -1,10 +1,7 @@
 module inbox3_addr::inbox3 {
-    use std::string;
     use std::signer;
     use std::vector;
     use aptos_framework::event;
-    use aptos_framework::coin;
-    use aptos_framework::aptos_coin::AptosCoin;
 
     struct Inbox has key {
         message_count: u64,
