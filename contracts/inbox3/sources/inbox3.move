@@ -131,9 +131,7 @@ module inbox3_addr::inbox3 {
         let store = borrow_global_mut<MessageStore>(addr);
         let inbox = borrow_global_mut<Inbox>(addr);
 
-        let count = vector::length(&escrow.pending_messages);
-        let mut i = 0;
-        while (i < count) {
+        while (vector::length(&escrow.pending_messages) > 0) {
             let msg = vector::remove(&mut escrow.pending_messages, 0);
             let sender = vector::remove(&mut escrow.pending_senders, 0);
             let ts = vector::remove(&mut escrow.pending_timestamps, 0);
@@ -142,8 +140,6 @@ module inbox3_addr::inbox3 {
             vector::push_back(&mut store.senders, sender);
             vector::push_back(&mut store.timestamps, ts);
             inbox.message_count = inbox.message_count + 1;
-
-            i = i + 1;
         };
     }
 
