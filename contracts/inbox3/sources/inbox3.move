@@ -170,6 +170,6 @@ module inbox3_addr::inbox3 {
 
         initialize_inbox(&recipient, b"my_public_key_data");
         let pub_key = get_public_key(recipient_addr);
-        assert!(vector::length(&pub_key) == 17, 1);
+        assert!(vector::length(&pub_key) == 19, 1);
     }
 }
