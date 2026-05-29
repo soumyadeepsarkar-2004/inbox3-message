@@ -323,6 +323,8 @@ module inbox3::attention_market {
         sender: &signer,
         recipient: &signer
     ) acquires Inbox {
+        use aptos_framework::timestamp;
+        timestamp::set_time_has_started_for_testing(aptos_framework);
         let (burn_cap, mint_cap) = aptos_coin::initialize_for_test(aptos_framework);
         let sender_addr = std::signer::address_of(sender);
         let recipient_addr = std::signer::address_of(recipient);
@@ -340,11 +342,14 @@ module inbox3::attention_market {
         coin::destroy_mint_cap(mint_cap);
     }
 
-    #[test(sender = @0x123, recipient = @0x456)]
+    #[test(aptos_framework = @0x1, sender = @0x123, recipient = @0x456)]
     public fun test_encrypted_commitment(
+        aptos_framework: &signer,
         sender: &signer,
         recipient: &signer,
     ) acquires MempoolCommitment {
+        use aptos_framework::timestamp;
+        timestamp::set_time_has_started_for_testing(aptos_framework);
         let sender_addr = std::signer::address_of(sender);
         let recipient_addr = std::signer::address_of(recipient);
         commit_encrypted_message(sender, recipient_addr, b"hash_1");
@@ -354,10 +359,13 @@ module inbox3::attention_market {
         assert!(get_mempool_commitment_count(sender_addr) == 2, 3);
     }
 
-    #[test(sender = @0x123)]
+    #[test(aptos_framework = @0x1, sender = @0x123)]
     public fun test_rln_nullifier_submission(
+        aptos_framework: &signer,
         sender: &signer,
     ) acquires RLNState {
+        use aptos_framework::timestamp;
+        timestamp::set_time_has_started_for_testing(aptos_framework);
         let sender_addr = std::signer::address_of(sender);
         submit_nullifier(sender, b"nullifier_1", 1);
         assert!(get_rln_message_count(sender_addr) == 1, 1);
