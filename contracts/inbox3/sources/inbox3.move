@@ -119,6 +119,10 @@ module inbox3_addr::inbox3 {
     #[test]
     fun test_initialize_and_send() {
         use aptos_framework::account;
+        use aptos_framework::timestamp;
+
+        let aptos = account::create_account_for_test(@0x1);
+        timestamp::set_time_has_started_for_testing(&aptos);
 
         let sender = account::create_account_for_test(@0xAA);
         let sender_addr = @0xAA;
@@ -136,6 +140,10 @@ module inbox3_addr::inbox3 {
     #[test]
     fun test_delete_message() {
         use aptos_framework::account;
+        use aptos_framework::timestamp;
+
+        let aptos = account::create_account_for_test(@0x1);
+        timestamp::set_time_has_started_for_testing(&aptos);
 
         let sender = account::create_account_for_test(@0xCC);
         let recipient = account::create_account_for_test(@0xDD);
@@ -152,6 +160,10 @@ module inbox3_addr::inbox3 {
     #[test]
     fun test_get_public_key() {
         use aptos_framework::account;
+        use aptos_framework::timestamp;
+
+        let aptos = account::create_account_for_test(@0x1);
+        timestamp::set_time_has_started_for_testing(&aptos);
 
         let recipient = account::create_account_for_test(@0xEE);
         let recipient_addr = @0xEE;
