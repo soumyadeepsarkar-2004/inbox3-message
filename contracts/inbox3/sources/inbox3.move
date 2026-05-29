@@ -91,19 +91,16 @@ module inbox3_addr::inbox3 {
         borrow_global<Inbox>(account).message_count
     }
 
-    public fun get_public_key(account: address): vector<u8> acquires Inbox {
-        assert!(exists<Inbox>(account), 501);
-        borrow_global<Inbox>(account).public_key
+    public fun get_public_key(inbox: &Inbox): &vector<u8> {
+        &inbox.public_key
     }
 
-    public fun get_messages(account: address): vector<vector<u8>> acquires MessageStore {
-        assert!(exists<MessageStore>(account), 601);
-        borrow_global<MessageStore>(account).messages
+    public fun get_messages(store: &MessageStore): &vector<vector<u8>> {
+        &store.messages
     }
 
-    public fun get_message_senders(account: address): vector<address> acquires MessageStore {
-        assert!(exists<MessageStore>(account), 701);
-        borrow_global<MessageStore>(account).senders
+    public fun get_message_senders(store: &MessageStore): &vector<address> {
+        &store.senders
     }
 
     public entry fun delete_message(account: &signer, index: u64) acquires MessageStore {
@@ -158,7 +155,7 @@ module inbox3_addr::inbox3 {
     }
 
     #[test]
-    fun test_get_public_key() {
+    fun test_get_public_key() acquires Inbox {
         use aptos_framework::account;
         use aptos_framework::timestamp;
 
@@ -169,7 +166,8 @@ module inbox3_addr::inbox3 {
         let recipient_addr = @0xEE;
 
         initialize_inbox(&recipient, b"my_public_key_data");
-        let pub_key = get_public_key(recipient_addr);
-        assert!(vector::length(&pub_key) == 19, 1);
+        let inbox = borrow_global<Inbox>(recipient_addr);
+        let pub_key = get_public_key(inbox);
+        assert!(vector::length(pub_key) == 19, 1);
     }
 }
